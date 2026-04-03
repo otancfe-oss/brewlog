@@ -2,115 +2,433 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BrewLog">
 <meta name="theme-color" content="#1a1410">
+<link rel="manifest" href="./manifest.json">
 <title>BrewLog</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100vh;background:#1a1410;color:#ede4da;font-family:'Georgia','Hiragino Mincho ProN','Yu Mincho',serif}
-input::placeholder,textarea::placeholder{color:rgba(200,149,108,0.3)}
+html,body{min-height:100vh;min-height:100dvh;background:linear-gradient(170deg,#1a1410 0%,#231c15 50%,#1a1410 100%);color:#ede4da;font-family:'Georgia','Hiragino Mincho ProN','Yu Mincho',serif;-webkit-tap-highlight-color:transparent}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(200,149,108,0.2);border-radius:2px}
-select option{background:#2a2118;color:#ede4da}
+input::placeholder,textarea::placeholder{color:rgba(200,149,108,0.3)}
+select{color-scheme:dark}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,80,80,0.4)}50%{box-shadow:0 0 0 8px rgba(220,80,80,0)}}
-input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#c8956c;border:3px solid #1a1410;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:pointer}
-input[type="range"]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#c8956c;border:3px solid #1a1410;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:pointer}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;height:20px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#c8956c;border:3px solid #1a1410;box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#c8956c;border:3px solid #1a1410;box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+.wrap{max-width:440px;margin:0 auto;padding:20px 16px 100px}
+.header{text-align:center;margin-bottom:28px;padding:10px 0}
+.header h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:32px;font-weight:600;color:#c8956c;letter-spacing:3px;margin-bottom:4px}
+.header p{font-size:11px;color:#6b5a4e;letter-spacing:2px}
+.tabs{display:flex;margin-bottom:24px;background:rgba(255,255,255,0.04);border-radius:12px;padding:3px}
+.tab{flex:1;padding:10px 0;border:none;border-radius:10px;background:transparent;color:#6b5a4e;font-size:14px;font-weight:400;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.tab.active{background:rgba(200,149,108,0.2);color:#ede4da;font-weight:600}
+.form{display:flex;flex-direction:column;gap:18px;animation:fadeIn 0.3s ease}
+.lbl{font-size:12px;color:#8a7b6e;letter-spacing:0.5px}
+.slbl{font-size:11px;color:#6b5a4e;letter-spacing:0.5px}
+.sel-wrap{position:relative}
+.sel{width:100%;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,0.05);border:1px solid rgba(200,149,108,0.2);border-radius:10px;padding:10px 32px 10px 12px;color:#ede4da;font-size:16px;outline:none;cursor:pointer;font-family:inherit}
+.sel-arr{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#8a7b6e;font-size:12px;pointer-events:none}
+.inp{background:rgba(255,255,255,0.04);border:1px solid rgba(200,149,108,0.15);border-radius:8px;padding:8px 10px;color:#ede4da;font-size:14px;outline:none;font-family:inherit;width:100%}
+.inp:focus{border-color:rgba(200,149,108,0.4)}
+.chip{background:rgba(200,149,108,0.08);border:1px solid rgba(200,149,108,0.12);border-radius:8px;padding:6px 12px;color:#8a7b6e;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.15s}
+.chip.on{background:rgba(200,149,108,0.3);border-color:rgba(200,149,108,0.5);color:#ede4da}
+.btn-save{background:linear-gradient(135deg,#c8956c 0%,#a07050 100%);border:none;border-radius:12px;padding:14px 0;color:#1a1410;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:1px;font-family:inherit}
+.btn-toggle{background:none;border:1px solid rgba(200,149,108,0.15);border-radius:10px;padding:10px 14px;color:#8a7b6e;font-size:13px;cursor:pointer;text-align:left}
+.btn-add{background:none;border:1px dashed rgba(200,149,108,0.25);border-radius:10px;padding:8px 14px;color:#8a7b6e;font-size:13px;cursor:pointer;text-align:center}
+.btn-del{margin-top:10px;background:none;border:1px solid rgba(200,100,100,0.3);border-radius:8px;padding:6px 14px;color:#c87070;font-size:12px;cursor:pointer}
+.card{background:rgba(255,255,255,0.04);border-radius:14px;padding:14px 16px;border:1px solid rgba(200,149,108,0.1);cursor:pointer;transition:all 0.2s}
+.ratio-box{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 14px;background:rgba(200,149,108,0.08);border-radius:10px}
+.ratio-val{font-size:18px;font-weight:700;color:#c8956c;font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:1px}
+.voice-btn{border-radius:10px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;flex-shrink:0;transition:all 0.2s;border:1px solid rgba(200,149,108,0.2);background:rgba(200,149,108,0.15)}
+.voice-btn.on{background:rgba(220,80,80,0.3);border-color:rgba(220,80,80,0.5);animation:pulse 1s infinite}
+.ai-btn{background:none;border:1px solid rgba(120,140,200,0.2);border-radius:10px;padding:9px 14px;color:#8a9bc0;font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px}
+.ai-box{background:rgba(120,140,200,0.05);border:1px solid rgba(120,140,200,0.12);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;animation:fadeIn 0.2s ease}
+.ai-prompt{background:rgba(120,140,200,0.08);border:1px solid rgba(120,140,200,0.15);border-radius:8px;padding:10px 12px;color:#a0b0d0;font-size:13px;cursor:pointer;text-align:left;font-family:inherit;display:flex;justify-content:space-between;align-items:center}
+.ai-prompt.copied{background:rgba(100,180,120,0.15);border-color:rgba(100,180,120,0.3);color:#8ac090}
+.bean-panel{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,0.02);border-radius:12px;padding:14px;border:1px solid rgba(200,149,108,0.15)}
+.preview-box{background:rgba(200,149,108,0.06);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.star{background:none;border:none;font-size:30px;padding:2px;cursor:pointer;color:#c8956c;transition:opacity 0.15s,transform 0.15s}
+.taste-row{display:flex;align-items:center;gap:10px}
+.taste-lbl{font-size:14px;color:#b8a590;width:70px;display:flex;align-items:center;gap:4px}
+.taste-btn{flex:1;height:28px;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;font-size:11px}
+.empty{text-align:center;padding:60px 20px;color:#6b5a4e}
+.pour-total{display:flex;gap:12px;justify-content:center;padding:10px 14px;background:rgba(200,149,108,0.08);border-radius:10px;margin-top:4px}
+.pour-total-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pour-total-label{font-size:10px;color:#8a7b6e}
+.pour-total-val{font-size:20px;font-weight:700;color:#c8956c;font-family:'Cormorant Garamond',Georgia,serif}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script type="text/babel">
-const {useState,useEffect,useRef}=React;
+<div class="wrap" id="app"></div>
+<script>
+"use strict";
 
-const STORAGE_KEY="brewlog_records",BEANS_KEY="brewlog_beans_v3",EQUIP_KEY="brewlog_equip";
-const loadData=(key,fb=[])=>{try{const r=localStorage.getItem(key);return r?JSON.parse(r):fb}catch{return fb}};
-const saveData=(key,d)=>{try{localStorage.setItem(key,JSON.stringify(d))}catch{}};
-
-const GRINDERS={"fellow_opus":{name:"Fellow Opus",min:1,max:11,step:0.25,unit:"",default:5,label:"設定値"},"timemore_xlite":{name:"Timemore X Lite",min:3,max:24,step:0.5,unit:"",default:14,label:"クリック"},"comandante_c40":{name:"Comandante C40",min:0,max:45,step:1,unit:"clicks",default:25,label:"クリック"},"other":{name:"その他",min:1,max:40,step:1,unit:"",default:15,label:"設定値"}};
+/* ── Data ── */
+const LS={get(k,fb){try{const r=localStorage.getItem(k);return r?JSON.parse(r):fb}catch{return fb}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const GRINDERS={"fellow_opus":{name:"Fellow Opus",min:1,max:11,step:0.25,default:5},"timemore_xlite":{name:"Timemore X Lite",min:3,max:24,step:0.5,default:14},"comandante_c40":{name:"Comandante C40",min:0,max:45,step:1,default:25},"other":{name:"その他",min:1,max:40,step:1,default:15}};
 const DRIPPERS=["Hario V60","Origami","OREA","Kalita Wave","Chemex","AeroPress","French Press","Clever","その他"];
-const TEMP_OPTIONS=[80,82,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,100];
-const DOSE_OPTIONS=[10,12,13,14,15,16,17,18,19,20,22,24,25,30];
-const WATER_OPTIONS=[150,180,200,220,225,230,240,250,260,270,280,300,350,400,500];
-const PROCESS_OPTIONS=["Washed","Natural","Honey","Anaerobic","Carbonic Maceration","Wet Hulled","Other"];
+const TEMPS=[80,82,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,100];
+const DOSES=[10,12,13,14,15,16,17,18,19,20,22,24,25,30];
+const WATERS=[150,180,200,220,225,230,240,250,260,270,280,300,350,400,500];
+const PROCS=["Washed","Natural","Honey","Anaerobic","Carbonic Maceration","Wet Hulled","Other"];
+const TASTE=[{k:"acidity",l:"酸味",e:"🍋"},{k:"sweetness",l:"甘味",e:"🍯"},{k:"bitterness",l:"苦味",e:"🫘"},{k:"body",l:"濃度感",e:"☕"}];
+const RADAR=[{k:"overall",l:"おいしさ"},...TASTE.map(t=>({k:t.k,l:t.l}))];
+const FLAGS={"エチオピア":"🇪🇹","ケニア":"🇰🇪","コロンビア":"🇨🇴","ブラジル":"🇧🇷","グアテマラ":"🇬🇹","コスタリカ":"🇨🇷","パナマ":"🇵🇦","インドネシア":"🇮🇩","ルワンダ":"🇷🇼","タンザニア":"🇹🇿","ホンジュラス":"🇭🇳","ペルー":"🇵🇪","メキシコ":"🇲🇽","イエメン":"🇾🇪","ニカラグア":"🇳🇮","ボリビア":"🇧🇴","エルサルバドル":"🇸🇻","中国":"🇨🇳","インド":"🇮🇳","ベトナム":"🇻🇳"};
+const POUR_WATERS=[10,15,20,25,30,35,40,45,50,60,70,80,90,100,110,120,130,140,150,160,170,180,200,220,250];
+const POUR_TIMES=[5,10,15,20,25,30,35,40,45,50,55,60,70,80,90,100,110,120];
 
-const DEFAULT_BREW={beanId:"",grinderId:"fellow_opus",dripper:"Hario V60",grind:5,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,note:""};
-const DEFAULT_BEAN={id:"",name:"",country:"",farm:"",altitude:"",process:""};
-const DEFAULT_EQUIP={grinderId:"fellow_opus",dripper:"Hario V60"};
+function beanName(b){if(b.name?.trim())return b.name;const p=[];if(b.country)p.push(b.country);if(b.farm)p.push(b.farm);if(b.process)p.push(`(${b.process})`);return p.length?p.join(" / "):"（名称未設定）";}
+function beanFlag(b){return FLAGS[b.country]||(b.country?"🌍":"");}
+function fmtDate(iso){const d=new Date(iso);return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
+function h(tag,props,...ch){const el=document.createElement(tag);if(props)Object.entries(props).forEach(([k,v])=>{if(k==="style"&&typeof v==="object")Object.assign(el.style,v);else if(k.startsWith("on"))el.addEventListener(k.slice(2).toLowerCase(),v);else if(k==="className")el.className=v;else if(k==="innerHTML")el.innerHTML=v;else el.setAttribute(k,v);});ch.flat(9).forEach(c=>{if(c==null||c===false)return;el.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c);});return el;}
+function sel(opts,val,onChange,cls="sel"){const w=h("div",{className:"sel-wrap"},h("select",{className:cls,value:val,onChange:e=>onChange(e.target.value)},...opts.map(o=>Object.assign(h("option",{value:o},o==""?"—":o),{selected:String(o)===String(val)}))),h("span",{className:"sel-arr"},"▼"));return w;}
 
-const TASTE_LABELS=[{key:"acidity",label:"酸味",emoji:"🍋"},{key:"sweetness",label:"甘味",emoji:"🍯"},{key:"bitterness",label:"苦味",emoji:"🫘"},{key:"body",label:"濃度感",emoji:"☕"}];
-const COUNTRY_FLAGS={"エチオピア":"🇪🇹","ケニア":"🇰🇪","コロンビア":"🇨🇴","ブラジル":"🇧🇷","グアテマラ":"🇬🇹","コスタリカ":"🇨🇷","パナマ":"🇵🇦","インドネシア":"🇮🇩","ルワンダ":"🇷🇼","タンザニア":"🇹🇿","ホンジュラス":"🇭🇳","ペルー":"🇵🇪","メキシコ":"🇲🇽","イエメン":"🇾🇪","ニカラグア":"🇳🇮","ボリビア":"🇧🇴","エルサルバドル":"🇸🇻","中国":"🇨🇳","インド":"🇮🇳","ベトナム":"🇻🇳"};
+/* ── State ── */
+let state={view:"list",records:LS.get("brewlog_records",[]),beans:LS.get("brewlog_beans_v3",[]),equip:LS.get("brewlog_equip",{grinderId:"fellow_opus",dripper:"Hario V60"}),brew:null,showTaste:false,showPours:false,addingBean:false,showBeanDetail:false,showBeanName:false,viewingBean:null,aiOpen:false,aiCopied:null,aiPaste:"",aiResult:null,expandedCard:null};
+function initBrew(){const e=state.equip;const g=GRINDERS[e.grinderId]||GRINDERS.fellow_opus;return{beanId:"",grinderId:e.grinderId,dripper:e.dripper,grind:g.default,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,note:""};}
+state.brew=initBrew();
+function save(){LS.set("brewlog_records",state.records);LS.set("brewlog_beans_v3",state.beans);LS.set("brewlog_equip",state.equip);}
 
-function getBeanDisplayName(b){if(b.name?.trim())return b.name;const p=[];if(b.country)p.push(b.country);if(b.farm)p.push(b.farm);if(b.process)p.push(`(${b.process})`);return p.length>0?p.join(" / "):"（名称未設定）";}
-function getBeanFlag(b){return COUNTRY_FLAGS[b.country]||(b.country?"🌍":"");}
-function formatDate(iso){const d=new Date(iso);return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}`;}
+/* ── Radar SVG ── */
+function radarSVG(data,size=180){const cx=size/2,cy=size/2,r=size/2-28,lv=5,n=RADAR.length,st=2*Math.PI/n,sa=-Math.PI/2;const pt=(i,v)=>{const a=sa+i*st,d=v/lv*r;return[cx+d*Math.cos(a),cy+d*Math.sin(a)];};let svg=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;for(let l=1;l<=lv;l++){const ps=Array.from({length:n},(_,i)=>pt(i,l));svg+=`<path d="${ps.map((p,i)=>`${i?'L':'M'}${p[0]} ${p[1]}`).join(' ')} Z" fill="none" stroke="rgba(200,149,108,0.12)" stroke-width="${l===lv?1:0.5}"/>`;}for(let i=0;i<n;i++){const p=pt(i,lv);svg+=`<line x1="${cx}" y1="${cy}" x2="${p[0]}" y2="${p[1]}" stroke="rgba(200,149,108,0.1)" stroke-width="0.5"/>`;}const dp=RADAR.map((a,i)=>pt(i,data[a.k]||0));svg+=`<path d="${dp.map((p,i)=>`${i?'L':'M'}${p[0]} ${p[1]}`).join(' ')} Z" fill="rgba(200,149,108,0.2)" stroke="#c8956c" stroke-width="1.5"/>`;dp.forEach(p=>{svg+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#c8956c"/>`;});RADAR.forEach((a,i)=>{const an=sa+i*st,d=r+18;svg+=`<text x="${cx+d*Math.cos(an)}" y="${cy+d*Math.sin(an)}" text-anchor="middle" dominant-baseline="middle" style="font-size:10px;fill:#8a7b6e">${a.l}</text>`;});svg+=`</svg>`;return svg;}
 
-function useVoiceInput(onResult){const[listening,setListening]=useState(false);const ref=useRef(null);const toggle=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("音声入力非対応");return;}if(listening&&ref.current){ref.current.stop();setListening(false);return;}const r=new SR();r.lang="ja-JP";r.continuous=false;r.interimResults=false;r.onresult=(e)=>{onResult(e.results[0][0].transcript);setListening(false);};r.onerror=()=>setListening(false);r.onend=()=>setListening(false);ref.current=r;r.start();setListening(true);};return{listening,toggle};}
-function VoiceButton({listening,onToggle,size=42}){return <button type="button" onClick={onToggle} style={{background:listening?"rgba(220,80,80,0.3)":"rgba(200,149,108,0.15)",border:`1px solid ${listening?"rgba(220,80,80,0.5)":"rgba(200,149,108,0.2)"}`,borderRadius:10,width:size,height:size,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:18,flexShrink:0,transition:"all 0.2s",animation:listening?"pulse 1s infinite":"none"}}>{listening?"⏹":"🎙"}</button>;}
+/* ── Voice ── */
+function startVoice(cb){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert("音声入力非対応");return null;}const r=new SR();r.lang="ja-JP";r.continuous=false;r.interimResults=false;r.onresult=e=>{cb(e.results[0][0].transcript);};return r;}
 
-function Dropdown({label,unit,value,onChange,options}){return <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>{label}</label><div style={{position:"relative"}}><select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",appearance:"none",WebkitAppearance:"none",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:10,padding:"10px 32px 10px 12px",color:"#ede4da",fontSize:16,outline:"none",cursor:"pointer",fontFamily:"inherit"}}>{options.map(o=><option key={o} value={o} style={{background:"#2a2118",color:"#ede4da"}}>{o===""?"—":`${o}${unit||""}`}</option>)}</select><span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#8a7b6e",fontSize:12,pointerEvents:"none"}}>▼</span></div></div>;}
-function SmallInput({label,value,onChange,placeholder,inputMode}){return <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#6b5a4e",letterSpacing:0.5}}>{label}</label><input type="text" inputMode={inputMode} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(200,149,108,0.15)",borderRadius:8,padding:"8px 10px",color:"#ede4da",fontSize:14,outline:"none",fontFamily:"inherit"}} onFocus={e=>e.target.style.borderColor="rgba(200,149,108,0.4)"} onBlur={e=>e.target.style.borderColor="rgba(200,149,108,0.15)"}/></div>;}
-function ChipSelect({label,options,value,onChange}){return <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>{label}</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{options.map(o=><button key={o} type="button" onClick={()=>onChange(value===o?"":o)} style={{background:value===o?"rgba(200,149,108,0.3)":"rgba(200,149,108,0.08)",border:`1px solid ${value===o?"rgba(200,149,108,0.5)":"rgba(200,149,108,0.12)"}`,borderRadius:8,padding:"6px 12px",color:value===o?"#ede4da":"#8a7b6e",fontSize:13,cursor:"pointer",fontFamily:"inherit",transition:"all 0.15s"}}>{o}</button>)}</div></div>;}
+/* ── AI Parse ── */
+function parseAI(text){const res={name:"",country:"",farm:"",altitude:"",process:""};const PM=PROCS;text.split("\n").map(l=>l.replace(/^[・\-\*•]\s*/,"").trim()).filter(Boolean).forEach(line=>{const lo=line.toLowerCase(),val=line.replace(/^[^:：]+[:：]\s*/,"").trim();if(!val||"—-不明なしN/A".includes(val))return;if(lo.match(/豆の名前|豆名|名前|name/))res.name=val;else if(lo.match(/生産国|国|country|origin/))res.country=val;else if(lo.match(/農園|ファーム|farm|estate|農協|ステーション/))res.farm=val;else if(lo.match(/標高|altitude|elevation|masl/)){const n=val.replace(/[^\d]/g,"");if(n)res.altitude=n;}else if(lo.match(/精製|プロセス|process|processing/)){const m=PM.find(p=>val.toLowerCase().includes(p.toLowerCase()));res.process=m||val;}});return res;}
 
-function GrindSlider({value,onChange,grinder}){const g=GRINDERS[grinder]||GRINDERS.fellow_opus;const pct=((value-g.min)/(g.max-g.min))*100;const displayVal=g.step<1?value.toFixed(g.step===0.25?2:1):value.toString();return <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>挽き目（{g.name}）</label><div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:22,fontWeight:700,color:"#c8956c",minWidth:48,textAlign:"center",fontFamily:"'Cormorant Garamond', Georgia, serif"}}>{displayVal}</span><div style={{flex:1,position:"relative",padding:"8px 0"}}><div style={{position:"absolute",top:"50%",left:0,right:0,height:4,background:"rgba(200,149,108,0.15)",borderRadius:2,transform:"translateY(-50%)"}}/><div style={{position:"absolute",top:"50%",left:0,width:`${pct}%`,height:4,background:"linear-gradient(90deg, #c8956c, #a07050)",borderRadius:2,transform:"translateY(-50%)"}}/><input type="range" min={g.min} max={g.max} step={g.step} value={value} onChange={e=>onChange(parseFloat(e.target.value))} style={{width:"100%",position:"relative",zIndex:2,WebkitAppearance:"none",appearance:"none",background:"transparent",cursor:"pointer",height:20}}/></div></div><div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#6b5a4e",padding:"0 4px"}}><span>細 ← {g.min}</span><span>{g.max} → 粗</span></div></div>;}
+/* ── Render ── */
+function render(){const app=document.getElementById("app");app.innerHTML="";
+  app.appendChild(h("div",{className:"header"},h("h1",null,"BrewLog"),h("p",null,"POUR OVER JOURNAL")));
+  const tabs=h("div",{className:"tabs"},h("button",{className:"tab"+(state.view==="list"?" active":""),onClick:()=>{state.view="list";render();}},"履歴"),h("button",{className:"tab"+(state.view==="add"?" active":""),onClick:()=>{state.view="add";render();}},"＋ 記録する"));
+  app.appendChild(tabs);
 
-function StarRow({value,onChange}){return <div style={{display:"flex",gap:4,cursor:"pointer"}}>{[1,2,3,4,5].map(i=><button key={i} type="button" onClick={()=>onChange(i)} style={{background:"none",border:"none",fontSize:30,padding:2,cursor:"pointer",transition:"opacity 0.15s, transform 0.15s",opacity:i<=value?1:0.25,transform:i<=value?"scale(1.1)":"scale(0.9)",color:"#c8956c"}}>★</button>)}</div>;}
-function TasteSlider({label,emoji,value,onChange}){return <div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:14,color:"#b8a590",width:70,display:"flex",alignItems:"center",gap:4}}><span>{emoji}</span> {label}</span><div style={{display:"flex",gap:3,flex:1}}>{[1,2,3,4,5].map(v=><button key={v} type="button" onClick={()=>onChange(value===v?0:v)} style={{flex:1,height:28,border:"none",borderRadius:6,background:v<=value?"#c8956c":"rgba(200,149,108,0.15)",cursor:"pointer",transition:"all 0.15s",fontSize:11,color:v<=value?"#1a1410":"#6b5a4e",fontWeight:v<=value?700:400}}>{v}</button>)}</div></div>;}
-
-const RADAR_AXES=[{key:"overall",label:"おいしさ"},{key:"acidity",label:"酸味"},{key:"sweetness",label:"甘味"},{key:"bitterness",label:"苦味"},{key:"body",label:"濃度感"}];
-function RadarChart({data,size=180}){const cx=size/2,cy=size/2,r=size/2-28,levels=5,n=RADAR_AXES.length,step=(2*Math.PI)/n,start=-Math.PI/2;const pt=(i,v)=>{const a=start+i*step;const d=(v/levels)*r;return{x:cx+d*Math.cos(a),y:cy+d*Math.sin(a)};};const grids=[];for(let l=1;l<=levels;l++){const ps=Array.from({length:n},(_,i)=>pt(i,l));grids.push(ps.map((p,i)=>`${i===0?"M":"L"} ${p.x} ${p.y}`).join(" ")+" Z");}const dp=RADAR_AXES.map((a,i)=>pt(i,data[a.key]||0));const dPath=dp.map((p,i)=>`${i===0?"M":"L"} ${p.x} ${p.y}`).join(" ")+" Z";const lp=Array.from({length:n},(_,i)=>{const a=start+i*step;const d=r+18;return{x:cx+d*Math.cos(a),y:cy+d*Math.sin(a)};});return <div style={{display:"flex",justifyContent:"center",padding:"4px 0"}}><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{grids.map((d,i)=><path key={i} d={d} fill="none" stroke="rgba(200,149,108,0.12)" strokeWidth={i===levels-1?1:0.5}/>)}{Array.from({length:n},(_,i)=>pt(i,levels)).map((p,i)=><line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(200,149,108,0.1)" strokeWidth={0.5}/>)}<path d={dPath} fill="rgba(200,149,108,0.2)" stroke="#c8956c" strokeWidth={1.5}/>{dp.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={3} fill="#c8956c"/>)}{lp.map((p,i)=><text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" style={{fontSize:10,fill:"#8a7b6e",fontFamily:"inherit"}}>{RADAR_AXES[i].label}</text>)}</svg></div>;}
-
-function AIPromptHelper({onParsed}){const[open,setOpen]=useState(false);const[copied,setCopied]=useState(null);const[paste,setPaste]=useState("");const[result,setResult]=useState(null);const prompts=[{id:"photo",label:"📸 パッケージ写真から",text:"この画像はコーヒー豆のパッケージです。以下の情報を読み取って、それぞれ改行して教えてください。\n\n・豆の名前\n・生産国\n・農園名\n・標高\n・精製方法（Washed / Natural / Honey / Anaerobic / Carbonic Maceration / Wet Hulled / Other）"},{id:"url",label:"🔗 商品URLから",text:"以下のURLのコーヒー豆の情報を読み取って、それぞれ改行して教えてください。\n\nURL: （ここにURLを貼る）\n\n・豆の名前\n・生産国\n・農園名\n・標高\n・精製方法（Washed / Natural / Honey / Anaerobic / Carbonic Maceration / Wet Hulled / Other）"},{id:"name",label:"☕ 豆の名前から",text:"以下のコーヒー豆について、わかる範囲で情報を教えてください。\n\n豆の名前: （ここに豆の名前を入力）\n\n・生産国\n・農園名\n・標高\n・精製方法（Washed / Natural / Honey / Anaerobic / Carbonic Maceration / Wet Hulled / Other）"}];const PM=["Washed","Natural","Honey","Anaerobic","Carbonic Maceration","Wet Hulled","Other"];const copy=async(p)=>{try{await navigator.clipboard.writeText(p.text)}catch{const t=document.createElement("textarea");t.value=p.text;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);}setCopied(p.id);setTimeout(()=>setCopied(null),2000);};const parse=()=>{if(!paste.trim())return;const res={name:"",country:"",farm:"",altitude:"",process:""};const lines=paste.split("\n").map(l=>l.replace(/^[・\-\*•]\s*/,"").trim()).filter(Boolean);for(const line of lines){const lo=line.toLowerCase();const val=line.replace(/^[^:：]+[:：]\s*/,"").trim();if(!val||val==="—"||val==="-"||val==="不明"||val==="なし"||val==="N/A")continue;if(lo.match(/豆の名前|豆名|名前|name/))res.name=val;else if(lo.match(/生産国|国|country|origin/))res.country=val;else if(lo.match(/農園|ファーム|farm|estate|農協|ステーション/))res.farm=val;else if(lo.match(/標高|altitude|elevation|masl/)){const n=val.replace(/[^\d]/g,"");if(n)res.altitude=n;}else if(lo.match(/精製|プロセス|process|processing/)){const m=PM.find(p=>val.toLowerCase().includes(p.toLowerCase()));res.process=m||val;}}setResult(res);};const apply=()=>{if(result){onParsed(result);setPaste("");setResult(null);}};
-return <div style={{display:"flex",flexDirection:"column",gap:6}}><button type="button" onClick={()=>setOpen(!open)} style={{background:"none",border:"1px solid rgba(120,140,200,0.2)",borderRadius:10,padding:"9px 14px",color:"#8a9bc0",fontSize:12,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>✨</span>{open?"AIで入力を楽にする ▾":"AIで入力を楽にする ▸"}</button>{open&&<div style={{background:"rgba(120,140,200,0.05)",border:"1px solid rgba(120,140,200,0.12)",borderRadius:10,padding:12,display:"flex",flexDirection:"column",gap:10,animation:"fadeIn 0.2s ease"}}><div style={{display:"flex",flexDirection:"column",gap:6}}><p style={{fontSize:12,color:"#8a9bc0",margin:0,fontWeight:600}}>① プロンプトをコピー</p>{prompts.map(p=><button key={p.id} type="button" onClick={()=>copy(p)} style={{background:copied===p.id?"rgba(100,180,120,0.15)":"rgba(120,140,200,0.08)",border:`1px solid ${copied===p.id?"rgba(100,180,120,0.3)":"rgba(120,140,200,0.15)"}`,borderRadius:8,padding:"10px 12px",color:copied===p.id?"#8ac090":"#a0b0d0",fontSize:13,cursor:"pointer",textAlign:"left",fontFamily:"inherit",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>{p.label}</span><span style={{fontSize:11,opacity:0.7}}>{copied===p.id?"✓ コピー済":"コピー"}</span></button>)}</div><div style={{display:"flex",flexDirection:"column",gap:6,borderTop:"1px solid rgba(120,140,200,0.1)",paddingTop:10}}><p style={{fontSize:12,color:"#8a9bc0",margin:0,fontWeight:600}}>② AIの回答を貼り付け</p><textarea value={paste} onChange={e=>{setPaste(e.target.value);setResult(null);}} placeholder="AIの回答をそのまま貼り付け" rows={4} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(120,140,200,0.2)",borderRadius:8,padding:"10px 12px",color:"#ede4da",fontSize:13,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}/>{paste.trim()&&!result&&<button type="button" onClick={parse} style={{background:"rgba(120,140,200,0.15)",border:"1px solid rgba(120,140,200,0.3)",borderRadius:8,padding:"8px 14px",color:"#a0b0d0",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>読み取る</button>}</div>{result&&<div style={{display:"flex",flexDirection:"column",gap:6,borderTop:"1px solid rgba(120,140,200,0.1)",paddingTop:10,animation:"fadeIn 0.2s ease"}}><p style={{fontSize:12,color:"#8a9bc0",margin:0,fontWeight:600}}>③ 確認して反映</p><div style={{background:"rgba(200,149,108,0.06)",borderRadius:8,padding:"10px 12px",display:"flex",flexDirection:"column",gap:4}}>{result.name&&<div style={{fontSize:13,color:"#b8a590"}}>📝 名前: <span style={{color:"#ede4da"}}>{result.name}</span></div>}{result.country&&<div style={{fontSize:13,color:"#b8a590"}}>🌍 国: <span style={{color:"#ede4da"}}>{result.country}</span></div>}{result.farm&&<div style={{fontSize:13,color:"#b8a590"}}>🏔 農園: <span style={{color:"#ede4da"}}>{result.farm}</span></div>}{result.altitude&&<div style={{fontSize:13,color:"#b8a590"}}>📐 標高: <span style={{color:"#ede4da"}}>{result.altitude}m</span></div>}{result.process&&<div style={{fontSize:13,color:"#b8a590"}}>⚙️ 精製: <span style={{color:"#ede4da"}}>{result.process}</span></div>}</div><div style={{display:"flex",gap:6}}><button type="button" onClick={apply} style={{flex:1,background:"rgba(100,180,120,0.2)",border:"1px solid rgba(100,180,120,0.3)",borderRadius:8,padding:"8px",color:"#8ac090",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>フォームに反映</button><button type="button" onClick={()=>{setResult(null);setPaste("");}} style={{background:"none",border:"1px solid rgba(120,140,200,0.15)",borderRadius:8,padding:"8px 12px",color:"#7a8aaa",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>やり直す</button></div></div>}</div>}</div>;}
-
-function BeanSelector({selectedId,onSelect,beans,onAddBean}){const[adding,setAdding]=useState(false);const[newBean,setNewBean]=useState({...DEFAULT_BEAN});const[showDetail,setShowDetail]=useState(false);const[showName,setShowName]=useState(false);const[viewing,setViewing]=useState(null);const nv=useVoiceInput(t=>setNewBean(p=>({...p,name:p.name+t})));const handleAdd=()=>{if(!newBean.country.trim()&&!newBean.name.trim())return;const b={...newBean,id:Date.now().toString()};onAddBean(b);onSelect(b.id);setNewBean({...DEFAULT_BEAN});setAdding(false);setShowDetail(false);setShowName(false);};const sel=beans.find(b=>b.id===selectedId);const preview=getBeanDisplayName(newBean);
-return <div style={{display:"flex",flexDirection:"column",gap:6}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>豆</label>{sel&&!adding&&<div style={{background:"rgba(200,149,108,0.08)",borderRadius:10,padding:"10px 14px",border:"1px solid rgba(200,149,108,0.15)"}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>{getBeanFlag(sel)}</span><span style={{fontSize:15,fontWeight:600,color:"#ede4da"}}>{getBeanDisplayName(sel)}</span></div>{sel.altitude&&<div style={{fontSize:12,color:"#8a7b6e",marginTop:2}}>{sel.altitude}m</div>}</div>}{viewing&&<div style={{background:"rgba(30,24,18,0.95)",borderRadius:12,padding:16,border:"1px solid rgba(200,149,108,0.2)",animation:"fadeIn 0.2s ease"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontSize:16,fontWeight:600,color:"#ede4da"}}>{getBeanFlag(viewing)} {getBeanDisplayName(viewing)}</span><button type="button" onClick={()=>setViewing(null)} style={{background:"none",border:"none",color:"#8a7b6e",fontSize:18,cursor:"pointer"}}>✕</button></div><div style={{display:"flex",flexDirection:"column",gap:6,fontSize:13,color:"#b8a590"}}>{viewing.country&&<div>🌍 国: {viewing.country}</div>}{viewing.farm&&<div>🏔 農園: {viewing.farm}</div>}{viewing.altitude&&<div>📐 標高: {viewing.altitude}m</div>}{viewing.process&&<div>⚙️ 精製: {viewing.process}</div>}{viewing.name&&<div>📝 カスタム名: {viewing.name}</div>}</div></div>}{!adding?<>{beans.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>{beans.map(b=><div key={b.id} style={{display:"flex",gap:0}}><button type="button" onClick={()=>onSelect(b.id)} style={{background:selectedId===b.id?"rgba(200,149,108,0.3)":"rgba(200,149,108,0.1)",border:`1px solid ${selectedId===b.id?"rgba(200,149,108,0.5)":"rgba(200,149,108,0.15)"}`,borderRadius:"10px 0 0 10px",padding:"8px 10px 8px 14px",color:selectedId===b.id?"#ede4da":"#b8a590",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>{getBeanFlag(b)} {getBeanDisplayName(b)}</button><button type="button" onClick={e=>{e.stopPropagation();setViewing(viewing?.id===b.id?null:b);}} style={{background:selectedId===b.id?"rgba(200,149,108,0.2)":"rgba(200,149,108,0.06)",border:`1px solid ${selectedId===b.id?"rgba(200,149,108,0.5)":"rgba(200,149,108,0.15)"}`,borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 10px",color:"#8a7b6e",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>ℹ</button></div>)}</div>}<button type="button" onClick={()=>setAdding(true)} style={{background:"none",border:"1px dashed rgba(200,149,108,0.25)",borderRadius:10,padding:"8px 14px",color:"#8a7b6e",fontSize:13,cursor:"pointer",textAlign:"center"}}>＋ 新しい豆を追加</button></>:<div style={{display:"flex",flexDirection:"column",gap:10,background:"rgba(255,255,255,0.02)",borderRadius:12,padding:14,border:"1px solid rgba(200,149,108,0.15)"}}><SmallInput label="国 *" value={newBean.country} onChange={v=>setNewBean(p=>({...p,country:v}))} placeholder="例: エチオピア"/><SmallInput label="農園" value={newBean.farm} onChange={v=>setNewBean(p=>({...p,farm:v}))} placeholder="例: Finca La Esperanza"/><div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:11,color:"#6b5a4e",letterSpacing:0.5}}>精製方法</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{PROCESS_OPTIONS.map(p=><button key={p} type="button" onClick={()=>setNewBean(prev=>({...prev,process:prev.process===p?"":p}))} style={{background:newBean.process===p?"rgba(200,149,108,0.3)":"rgba(200,149,108,0.08)",border:`1px solid ${newBean.process===p?"rgba(200,149,108,0.5)":"rgba(200,149,108,0.12)"}`,borderRadius:8,padding:"5px 10px",color:newBean.process===p?"#ede4da":"#8a7b6e",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>{p}</button>)}</div></div><button type="button" onClick={()=>setShowDetail(!showDetail)} style={{background:"none",border:"none",padding:0,color:"#6b5a4e",fontSize:12,cursor:"pointer",textAlign:"left"}}>{showDetail?"▾ 標高を閉じる":"▸ 標高を追加（任意）"}</button>{showDetail&&<SmallInput label="標高（m）" value={newBean.altitude} onChange={v=>setNewBean(p=>({...p,altitude:v}))} placeholder="例: 1800" inputMode="numeric"/>}<button type="button" onClick={()=>setShowName(!showName)} style={{background:"none",border:"none",padding:0,color:"#6b5a4e",fontSize:12,cursor:"pointer",textAlign:"left"}}>{showName?"▾ カスタム名を閉じる":"▸ カスタム名をつける（任意）"}</button>{showName&&<div style={{display:"flex",gap:6,animation:"fadeIn 0.2s ease"}}><input type="text" value={newBean.name} onChange={e=>setNewBean(p=>({...p,name:e.target.value}))} placeholder="例: いつものエチオピア" style={{flex:1,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(200,149,108,0.15)",borderRadius:8,padding:"8px 10px",color:"#ede4da",fontSize:14,outline:"none",fontFamily:"inherit"}}/><VoiceButton listening={nv.listening} onToggle={nv.toggle} size={38}/></div>}<div style={{background:"rgba(200,149,108,0.06)",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:10,color:"#6b5a4e"}}>表示名:</span><span style={{fontSize:13,color:"#b8a590",fontWeight:600}}>{getBeanFlag(newBean)} {preview}</span></div><AIPromptHelper onParsed={parsed=>{setNewBean(prev=>({...prev,name:parsed.name||prev.name,country:parsed.country||prev.country,farm:parsed.farm||prev.farm,altitude:parsed.altitude||prev.altitude,process:parsed.process||prev.process}));if(parsed.farm||parsed.altitude)setShowDetail(true);if(parsed.name)setShowName(true);}}/><div style={{display:"flex",gap:6}}><button type="button" onClick={handleAdd} style={{flex:1,background:"rgba(200,149,108,0.2)",border:"none",borderRadius:10,padding:"8px",color:"#ede4da",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>追加</button><button type="button" onClick={()=>{setAdding(false);setNewBean({...DEFAULT_BEAN});setShowDetail(false);setShowName(false);}} style={{background:"none",border:"1px solid rgba(200,149,108,0.15)",borderRadius:10,padding:"8px 14px",color:"#8a7b6e",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>キャンセル</button></div></div>}</div>;}
-
-function BrewCard({record,beans,onDelete}){const[expanded,setExpanded]=useState(false);const hasTaste=TASTE_LABELS.some(t=>record[t.key]>0)||record.overall>0;const bean=beans.find(b=>b.id===record.beanId);const beanName=bean?getBeanDisplayName(bean):"（豆名なし）";const flag=bean?getBeanFlag(bean):"";const grinder=GRINDERS[record.grinderId];const grinderName=grinder?grinder.name:record.grinderId;
-return <div style={{background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"14px 16px",border:"1px solid rgba(200,149,108,0.1)",cursor:"pointer",transition:"all 0.2s"}} onClick={()=>setExpanded(!expanded)}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>{flag&&<span style={{fontSize:14}}>{flag}</span>}<span style={{fontSize:15,fontWeight:600,color:"#ede4da"}}>{beanName}</span><span style={{fontSize:14,color:"#c8956c"}}>{"★".repeat(record.overall||3)}{"☆".repeat(5-(record.overall||3))}</span></div><div style={{fontSize:12,color:"#8a7b6e",display:"flex",gap:8,flexWrap:"wrap"}}><span>{formatDate(record.createdAt)}</span>{record.dripper&&<span>{record.dripper}</span>}</div></div><div style={{display:"flex",gap:8,fontSize:12,color:"#b8a590",flexWrap:"wrap",justifyContent:"flex-end",maxWidth:"50%"}}>{record.grind!=null&&<span>{grinderName} {record.grind}</span>}{record.temp&&<span>{record.temp}℃</span>}{record.dose&&record.water&&<span style={{color:"#c8956c",fontWeight:600}}>1:{(record.water/record.dose).toFixed(1)}</span>}</div></div>{expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid rgba(200,149,108,0.1)"}}><div style={{fontSize:12,color:"#8a7b6e",marginBottom:8,display:"flex",gap:8,flexWrap:"wrap"}}>{record.dose&&<span>{record.dose}g</span>}{record.water&&<span>→ {record.water}g</span>}{(record.brewTimeMin>0||record.brewTimeSec>0)&&<span>⏱ {record.brewTimeMin}:{(record.brewTimeSec||0).toString().padStart(2,"0")}</span>}{bean?.farm&&<span>🏔 {bean.farm}</span>}{bean?.altitude&&<span>📐 {bean.altitude}m</span>}</div>{record.pours&&record.pours.length>0&&<div style={{marginBottom:8}}><div style={{fontSize:11,color:"#6b5a4e",marginBottom:4}}>注湯</div><div style={{display:"flex",flexDirection:"column",gap:3}}>{record.pours.map((p,i)=><div key={i} style={{display:"flex",gap:8,fontSize:12,color:"#b8a590"}}><span style={{color:"#8a7b6e",minWidth:44}}>{i===0?"蒸らし":`${i}投目`}</span><span>{p.water}g</span><span>{p.timeSec}秒</span></div>)}</div></div>}{hasTaste&&<RadarChart data={record} size={180}/>}{record.note&&<p style={{fontSize:13,color:"#9a8b7e",margin:0,lineHeight:1.5}}>{record.note}</p>}<button onClick={e=>{e.stopPropagation();onDelete(record.id);}} style={{marginTop:10,background:"none",border:"1px solid rgba(200,100,100,0.3)",borderRadius:8,padding:"6px 14px",color:"#c87070",fontSize:12,cursor:"pointer"}}>削除</button></div>}</div>;}
-
-function BrewLog(){
-  const[view,setView]=useState("list");const[records,setRecords]=useState([]);const[beans,setBeans]=useState([]);const[brew,setBrew]=useState({...DEFAULT_BREW});const[equip,setEquip]=useState({...DEFAULT_EQUIP});const[showTaste,setShowTaste]=useState(false);const[showPours,setShowPours]=useState(false);const[loaded,setLoaded]=useState(false);
-  const mv=useVoiceInput(t=>setBrew(p=>({...p,note:p.note?p.note+" "+t:t})));
-  useEffect(()=>{setRecords(loadData(STORAGE_KEY,[]));setBeans(loadData(BEANS_KEY,[]));const e=loadData(EQUIP_KEY,null);if(e){setEquip(e);setBrew(p=>({...p,grinderId:e.grinderId,dripper:e.dripper,grind:GRINDERS[e.grinderId]?.default||5}));}setLoaded(true);},[]);
-  useEffect(()=>{if(loaded)saveData(STORAGE_KEY,records);},[records,loaded]);
-  useEffect(()=>{if(loaded)saveData(BEANS_KEY,beans);},[beans,loaded]);
-  useEffect(()=>{if(loaded)saveData(EQUIP_KEY,equip);},[equip,loaded]);
-  const updateBrew=(k,v)=>setBrew(p=>({...p,[k]:v}));
-  const changeGrinder=(id)=>{const g=GRINDERS[id];setEquip(p=>({...p,grinderId:id}));setBrew(p=>({...p,grinderId:id,grind:g?.default||5}));};
-  const changeDripper=(d)=>{setEquip(p=>({...p,dripper:d}));setBrew(p=>({...p,dripper:d}));};
-  const handleSave=()=>{if(!brew.beanId)return;const r={...brew,id:Date.now().toString(),createdAt:new Date().toISOString()};setRecords(p=>[r,...p]);setBrew(p=>({...DEFAULT_BREW,beanId:p.beanId,grinderId:p.grinderId,dripper:p.dripper,grind:p.grind}));setShowTaste(false);setShowPours(false);setView("list");};
-  const handleDelete=id=>setRecords(p=>p.filter(r=>r.id!==id));
-
-  return <div style={{minHeight:"100vh",background:"linear-gradient(170deg, #1a1410 0%, #231c15 50%, #1a1410 100%)",color:"#ede4da",fontFamily:"'Georgia', 'Hiragino Mincho ProN', 'Yu Mincho', serif"}}><div style={{maxWidth:440,margin:"0 auto",padding:"20px 16px 100px"}}><div style={{textAlign:"center",marginBottom:28,padding:"10px 0"}}><h1 style={{fontFamily:"'Cormorant Garamond', Georgia, serif",fontSize:32,fontWeight:600,color:"#c8956c",letterSpacing:3,marginBottom:4}}>BrewLog</h1><p style={{fontSize:11,color:"#6b5a4e",letterSpacing:2}}>POUR OVER JOURNAL</p></div><div style={{display:"flex",marginBottom:24,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:3}}>{[{key:"list",label:"履歴"},{key:"add",label:"＋ 記録する"}].map(tab=><button key={tab.key} onClick={()=>setView(tab.key)} style={{flex:1,padding:"10px 0",border:"none",borderRadius:10,background:view===tab.key?"rgba(200,149,108,0.2)":"transparent",color:view===tab.key?"#ede4da":"#6b5a4e",fontSize:14,fontWeight:view===tab.key?600:400,cursor:"pointer",transition:"all 0.2s",fontFamily:"inherit"}}>{tab.label}</button>)}</div>
-
-  {view==="add"&&<div style={{display:"flex",flexDirection:"column",gap:18,animation:"fadeIn 0.3s ease"}}>
-    <BeanSelector selectedId={brew.beanId} onSelect={id=>updateBrew("beanId",id)} beans={beans} onAddBean={b=>setBeans(p=>[...p,b])}/>
-    <ChipSelect label="ミル" options={Object.keys(GRINDERS).map(k=>GRINDERS[k].name)} value={GRINDERS[brew.grinderId]?.name} onChange={name=>{const id=Object.keys(GRINDERS).find(k=>GRINDERS[k].name===name);if(id)changeGrinder(id);}}/>
-    <GrindSlider value={brew.grind} onChange={v=>updateBrew("grind",v)} grinder={brew.grinderId}/>
-    <ChipSelect label="ドリッパー" options={DRIPPERS} value={brew.dripper} onChange={v=>changeDripper(v)}/>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}><Dropdown label="湯温" unit="℃" value={brew.temp} onChange={v=>updateBrew("temp",Number(v))} options={TEMP_OPTIONS}/><Dropdown label="粉量" unit="g" value={brew.dose} onChange={v=>updateBrew("dose",Number(v))} options={DOSE_OPTIONS}/><Dropdown label="湯量" unit="g" value={brew.water} onChange={v=>updateBrew("water",Number(v))} options={WATER_OPTIONS}/></div>
-    {brew.dose>0&&brew.water>0&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"8px 14px",background:"rgba(200,149,108,0.08)",borderRadius:10}}><span style={{fontSize:12,color:"#8a7b6e"}}>Ratio</span><span style={{fontSize:18,fontWeight:700,color:"#c8956c",fontFamily:"'Cormorant Garamond', Georgia, serif",letterSpacing:1}}>1 : {(brew.water/brew.dose).toFixed(1)}</span></div>}
-    <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>抽出時間</label><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{position:"relative",flex:1}}><select value={brew.brewTimeMin} onChange={e=>updateBrew("brewTimeMin",Number(e.target.value))} style={{width:"100%",appearance:"none",WebkitAppearance:"none",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:10,padding:"10px 32px 10px 12px",color:"#ede4da",fontSize:16,outline:"none",cursor:"pointer",fontFamily:"inherit"}}>{[0,1,2,3,4,5,6,7,8,9,10].map(m=><option key={m} value={m} style={{background:"#2a2118",color:"#ede4da"}}>{m}</option>)}</select><span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#8a7b6e",fontSize:12,pointerEvents:"none"}}>分</span></div><div style={{position:"relative",flex:1}}><select value={brew.brewTimeSec} onChange={e=>updateBrew("brewTimeSec",Number(e.target.value))} style={{width:"100%",appearance:"none",WebkitAppearance:"none",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:10,padding:"10px 32px 10px 12px",color:"#ede4da",fontSize:16,outline:"none",cursor:"pointer",fontFamily:"inherit"}}>{[0,5,10,15,20,25,30,35,40,45,50,55].map(s=><option key={s} value={s} style={{background:"#2a2118",color:"#ede4da"}}>{s.toString().padStart(2,"0")}</option>)}</select><span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#8a7b6e",fontSize:12,pointerEvents:"none"}}>秒</span></div></div></div>
-    <button type="button" onClick={()=>setShowPours(!showPours)} style={{background:"none",border:"1px solid rgba(200,149,108,0.15)",borderRadius:10,padding:"10px 14px",color:"#8a7b6e",fontSize:13,cursor:"pointer",textAlign:"left"}}>{showPours?"▾ 注湯の詳細を閉じる":"▸ 注湯の詳細を記録する（任意）"}</button>
-    {showPours&&<div style={{display:"flex",flexDirection:"column",gap:8,animation:"fadeIn 0.2s ease"}}>{brew.pours.map((pour,idx)=><div key={idx} style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:12,color:"#8a7b6e",minWidth:52,flexShrink:0}}>{idx===0?"蒸らし":`${idx}投目`}</span><div style={{position:"relative",flex:1}}><select value={pour.water} onChange={e=>{const p=[...brew.pours];p[idx]={...p[idx],water:Number(e.target.value)};updateBrew("pours",p);}} style={{width:"100%",appearance:"none",WebkitAppearance:"none",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:8,padding:"8px 28px 8px 10px",color:"#ede4da",fontSize:14,outline:"none",cursor:"pointer",fontFamily:"inherit"}}>{[10,15,20,25,30,35,40,45,50,60,70,80,90,100,110,120,130,140,150,160,170,180,200,220,250].map(w=><option key={w} value={w} style={{background:"#2a2118",color:"#ede4da"}}>{w}g</option>)}</select><span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",color:"#6b5a4e",fontSize:10,pointerEvents:"none"}}>▼</span></div><div style={{position:"relative",flex:1}}><select value={pour.timeSec} onChange={e=>{const p=[...brew.pours];p[idx]={...p[idx],timeSec:Number(e.target.value)};updateBrew("pours",p);}} style={{width:"100%",appearance:"none",WebkitAppearance:"none",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:8,padding:"8px 28px 8px 10px",color:"#ede4da",fontSize:14,outline:"none",cursor:"pointer",fontFamily:"inherit"}}>{[5,10,15,20,25,30,35,40,45,50,55,60,70,80,90,100,110,120].map(s=><option key={s} value={s} style={{background:"#2a2118",color:"#ede4da"}}>{s}秒</option>)}</select><span style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",color:"#6b5a4e",fontSize:10,pointerEvents:"none"}}>▼</span></div><button type="button" onClick={()=>{const p=[...brew.pours];p.splice(idx,1);updateBrew("pours",p);}} style={{background:"none",border:"none",color:"#8a7b6e",fontSize:16,cursor:"pointer",padding:"4px",flexShrink:0}}>✕</button></div>)}<button type="button" onClick={()=>updateBrew("pours",[...brew.pours,{water:brew.pours.length===0?40:60,timeSec:brew.pours.length===0?30:10}])} style={{background:"none",border:"1px dashed rgba(200,149,108,0.25)",borderRadius:8,padding:"8px",color:"#8a7b6e",fontSize:12,cursor:"pointer",textAlign:"center"}}>＋ {brew.pours.length===0?"蒸らしを追加":"注湯を追加"}</button>{brew.pours.length>0&&<div style={{display:"flex",gap:12,justifyContent:"center",padding:"10px 14px",background:"rgba(200,149,108,0.08)",borderRadius:10,marginTop:4}}><div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span style={{fontSize:10,color:"#8a7b6e"}}>合計湯量</span><span style={{fontSize:20,fontWeight:700,color:"#c8956c",fontFamily:"'Cormorant Garamond', Georgia, serif"}}>{brew.pours.reduce((s,p)=>s+p.water,0)}<span style={{fontSize:13,fontWeight:400}}>g</span></span></div><div style={{width:1,background:"rgba(200,149,108,0.15)"}}/><div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span style={{fontSize:10,color:"#8a7b6e"}}>合計時間</span><span style={{fontSize:20,fontWeight:700,color:"#c8956c",fontFamily:"'Cormorant Garamond', Georgia, serif"}}>{Math.floor(brew.pours.reduce((s,p)=>s+p.timeSec,0)/60)}:{(brew.pours.reduce((s,p)=>s+p.timeSec,0)%60).toString().padStart(2,"0")}</span></div></div>}</div>}
-    <div style={{display:"flex",flexDirection:"column",gap:6}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>おいしさ</label><StarRow value={brew.overall} onChange={v=>updateBrew("overall",v)}/></div>
-    <button type="button" onClick={()=>setShowTaste(!showTaste)} style={{background:"none",border:"1px solid rgba(200,149,108,0.15)",borderRadius:10,padding:"10px 14px",color:"#8a7b6e",fontSize:13,cursor:"pointer",textAlign:"left"}}>{showTaste?"▾ 味の詳細を閉じる":"▸ 味の詳細を記録する（任意）"}</button>
-    {showTaste&&<div style={{display:"flex",flexDirection:"column",gap:10,animation:"fadeIn 0.2s ease"}}>{TASTE_LABELS.map(t=><TasteSlider key={t.key} label={t.label} emoji={t.emoji} value={brew[t.key]} onChange={v=>updateBrew(t.key,v)}/>)}</div>}
-    <div style={{display:"flex",flexDirection:"column",gap:4}}><label style={{fontSize:12,color:"#8a7b6e",letterSpacing:0.5}}>メモ</label><div style={{display:"flex",gap:6}}><textarea value={brew.note} onChange={e=>updateBrew("note",e.target.value)} placeholder="気づいたこと、次回試したいこと..." rows={2} style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:10,padding:"10px 12px",color:"#ede4da",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}/><VoiceButton listening={mv.listening} onToggle={mv.toggle}/></div></div>
-    <button onClick={handleSave} style={{background:"linear-gradient(135deg, #c8956c 0%, #a07050 100%)",border:"none",borderRadius:12,padding:"14px 0",color:"#1a1410",fontSize:16,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"inherit"}}>記録する</button>
-  </div>}
-
-  {view==="list"&&<div style={{animation:"fadeIn 0.3s ease"}}>{records.length===0?<div style={{textAlign:"center",padding:"60px 20px",color:"#6b5a4e"}}><div style={{fontSize:40,marginBottom:16}}>☕</div><p style={{fontSize:14,lineHeight:1.8}}>まだ記録がありません。<br/>最初の一杯を記録してみましょう。</p></div>:<div style={{display:"flex",flexDirection:"column",gap:10}}><div style={{fontSize:12,color:"#6b5a4e",marginBottom:4}}>{records.length} 件の記録</div>{records.map(r=><BrewCard key={r.id} record={r} beans={beans} onDelete={handleDelete}/>)}</div>}</div>}
-  </div></div>;
+  if(state.view==="add")renderForm(app);
+  else renderList(app);
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<BrewLog/>);
+function renderForm(app){
+  const b=state.brew,g=GRINDERS[b.grinderId]||GRINDERS.fellow_opus;
+  const form=h("div",{className:"form"});
+
+  /* Bean selector */
+  form.appendChild(renderBeanSelector());
+
+  /* Grinder */
+  const gDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+  gDiv.appendChild(h("span",{className:"lbl"},"ミル"));
+  const gChips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:4}});
+  Object.keys(GRINDERS).forEach(k=>{const gi=GRINDERS[k];gChips.appendChild(h("button",{className:"chip"+(b.grinderId===k?" on":""),onClick:()=>{state.equip.grinderId=k;b.grinderId=k;b.grind=gi.default;save();render();}},gi.name));});
+  gDiv.appendChild(gChips);form.appendChild(gDiv);
+
+  /* Grind slider */
+  const gsDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+  gsDiv.appendChild(h("span",{className:"lbl"},`挽き目（${g.name}）`));
+  const gsRow=h("div",{style:{display:"flex",alignItems:"center",gap:12}});
+  const displayVal=g.step<1?b.grind.toFixed(g.step===0.25?2:1):b.grind.toString();
+  gsRow.appendChild(h("span",{style:{fontSize:"22px",fontWeight:700,color:"#c8956c",minWidth:"48px",textAlign:"center",fontFamily:"'Cormorant Garamond',Georgia,serif"}},displayVal));
+  const sliderWrap=h("div",{style:{flex:1,position:"relative",padding:"8px 0"}});
+  const pct=((b.grind-g.min)/(g.max-g.min))*100;
+  sliderWrap.appendChild(h("div",{style:{position:"absolute",top:"50%",left:0,right:0,height:"4px",background:"rgba(200,149,108,0.15)",borderRadius:"2px",transform:"translateY(-50%)"}}));
+  sliderWrap.appendChild(h("div",{style:{position:"absolute",top:"50%",left:0,width:pct+"%",height:"4px",background:"linear-gradient(90deg,#c8956c,#a07050)",borderRadius:"2px",transform:"translateY(-50%)"}}));
+  const slider=h("input",{type:"range",min:g.min,max:g.max,step:g.step,value:b.grind,style:{width:"100%",position:"relative",zIndex:2},onInput:e=>{b.grind=parseFloat(e.target.value);render();}});
+  sliderWrap.appendChild(slider);gsRow.appendChild(sliderWrap);gsDiv.appendChild(gsRow);
+  gsDiv.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"10px",color:"#6b5a4e",padding:"0 4px"}},h("span",null,`細 ← ${g.min}`),h("span",null,`${g.max} → 粗`)));
+  form.appendChild(gsDiv);
+
+  /* Dripper */
+  const dDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+  dDiv.appendChild(h("span",{className:"lbl"},"ドリッパー"));
+  const dChips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:4}});
+  DRIPPERS.forEach(d=>{dChips.appendChild(h("button",{className:"chip"+(b.dripper===d?" on":""),onClick:()=>{b.dripper=d;state.equip.dripper=d;save();render();}},d));});
+  dDiv.appendChild(dChips);form.appendChild(dDiv);
+
+  /* Temp, Dose, Water */
+  const grid=h("div",{className:"grid3"});
+  [["湯温","℃","temp",TEMPS],["粉量","g","dose",DOSES],["湯量","g","water",WATERS]].forEach(([lbl,u,k,opts])=>{
+    const d=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+    d.appendChild(h("span",{className:"lbl"},lbl));
+    d.appendChild(sel(opts.map(o=>o+u),b[k]+u,v=>{b[k]=parseInt(v);render();}));
+    grid.appendChild(d);
+  });
+  form.appendChild(grid);
+
+  /* Ratio */
+  if(b.dose>0&&b.water>0){form.appendChild(h("div",{className:"ratio-box"},h("span",{style:{fontSize:"12px",color:"#8a7b6e"}},"Ratio"),h("span",{className:"ratio-val"},`1 : ${(b.water/b.dose).toFixed(1)}`)));}
+
+  /* Brew time */
+  const btDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+  btDiv.appendChild(h("span",{className:"lbl"},"抽出時間"));
+  const btRow=h("div",{style:{display:"flex",alignItems:"center",gap:6}});
+  const mins=[0,1,2,3,4,5,6,7,8,9,10];
+  const secs=[0,5,10,15,20,25,30,35,40,45,50,55];
+  btRow.appendChild(sel(mins,b.brewTimeMin,v=>{b.brewTimeMin=parseInt(v);render();}));
+  btRow.firstChild.querySelector(".sel-arr").textContent="分";
+  btRow.appendChild(sel(secs.map(s=>String(s).padStart(2,"0")),String(b.brewTimeSec).padStart(2,"0"),v=>{b.brewTimeSec=parseInt(v);render();}));
+  btRow.lastChild.querySelector(".sel-arr").textContent="秒";
+  btDiv.appendChild(btRow);form.appendChild(btDiv);
+
+  /* Pour details */
+  form.appendChild(h("button",{className:"btn-toggle",onClick:()=>{state.showPours=!state.showPours;render();}},state.showPours?"▾ 注湯の詳細を閉じる":"▸ 注湯の詳細を記録する（任意）"));
+  if(state.showPours){
+    const pDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:8,animation:"fadeIn 0.2s ease"}});
+    b.pours.forEach((pour,idx)=>{
+      const row=h("div",{style:{display:"flex",gap:6,alignItems:"center"}});
+      row.appendChild(h("span",{style:{fontSize:"12px",color:"#8a7b6e",minWidth:"52px",flexShrink:0}},idx===0?"蒸らし":`${idx}投目`));
+      row.appendChild(sel(POUR_WATERS.map(w=>w+"g"),pour.water+"g",v=>{pour.water=parseInt(v);render();}));
+      row.appendChild(sel(POUR_TIMES.map(s=>s+"秒"),pour.timeSec+"秒",v=>{pour.timeSec=parseInt(v);render();}));
+      row.appendChild(h("button",{style:{background:"none",border:"none",color:"#8a7b6e",fontSize:"16px",cursor:"pointer",padding:"4px",flexShrink:0},onClick:()=>{b.pours.splice(idx,1);render();}},"✕"));
+      pDiv.appendChild(row);
+    });
+    pDiv.appendChild(h("button",{className:"btn-add",onClick:()=>{b.pours.push({water:b.pours.length===0?40:60,timeSec:b.pours.length===0?30:10});render();}},`＋ ${b.pours.length===0?"蒸らしを追加":"注湯を追加"}`));
+    if(b.pours.length>0){
+      const totalW=b.pours.reduce((s,p)=>s+p.water,0);
+      const totalS=b.pours.reduce((s,p)=>s+p.timeSec,0);
+      const tDiv=h("div",{className:"pour-total"},
+        h("div",{className:"pour-total-item"},h("span",{className:"pour-total-label"},"合計湯量"),h("span",{className:"pour-total-val",innerHTML:`${totalW}<span style="font-size:13px;font-weight:400">g</span>`})),
+        h("div",{style:{width:"1px",background:"rgba(200,149,108,0.15)"}}),
+        h("div",{className:"pour-total-item"},h("span",{className:"pour-total-label"},"合計時間"),h("span",{className:"pour-total-val"},`${Math.floor(totalS/60)}:${String(totalS%60).padStart(2,"0")}`))
+      );pDiv.appendChild(tDiv);
+    }
+    form.appendChild(pDiv);
+  }
+
+  /* Overall */
+  const oDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:6}});
+  oDiv.appendChild(h("span",{className:"lbl"},"おいしさ"));
+  const stars=h("div",{style:{display:"flex",gap:4}});
+  for(let i=1;i<=5;i++){stars.appendChild(h("button",{className:"star",style:{opacity:i<=b.overall?1:0.25,transform:i<=b.overall?"scale(1.1)":"scale(0.9)"},onClick:()=>{b.overall=i;render();}},"★"));}
+  oDiv.appendChild(stars);form.appendChild(oDiv);
+
+  /* Taste */
+  form.appendChild(h("button",{className:"btn-toggle",onClick:()=>{state.showTaste=!state.showTaste;render();}},state.showTaste?"▾ 味の詳細を閉じる":"▸ 味の詳細を記録する（任意）"));
+  if(state.showTaste){
+    const tDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:10,animation:"fadeIn 0.2s ease"}});
+    TASTE.forEach(t=>{
+      const row=h("div",{className:"taste-row"});
+      row.appendChild(h("span",{className:"taste-lbl"},`${t.e} ${t.l}`));
+      const btns=h("div",{style:{display:"flex",gap:3,flex:1}});
+      for(let v=1;v<=5;v++){btns.appendChild(h("button",{className:"taste-btn",style:{background:v<=b[t.k]?"#c8956c":"rgba(200,149,108,0.15)",color:v<=b[t.k]?"#1a1410":"#6b5a4e",fontWeight:v<=b[t.k]?700:400},onClick:()=>{b[t.k]=b[t.k]===v?0:v;render();}},v));}
+      row.appendChild(btns);tDiv.appendChild(row);
+    });form.appendChild(tDiv);
+  }
+
+  /* Memo */
+  const mDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+  mDiv.appendChild(h("span",{className:"lbl"},"メモ"));
+  const mRow=h("div",{style:{display:"flex",gap:6}});
+  const ta=h("textarea",{placeholder:"気づいたこと、次回試したいこと...",rows:2,style:{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:"10px",padding:"10px 12px",color:"#ede4da",fontSize:"14px",outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6},onInput:e=>{b.note=e.target.value;}});
+  ta.value=b.note;mRow.appendChild(ta);
+  const vb=h("button",{className:"voice-btn",onClick:()=>{const r=startVoice(t=>{b.note=b.note?b.note+" "+t:t;render();});if(r)r.start();}},"🎙");
+  mRow.appendChild(vb);mDiv.appendChild(mRow);form.appendChild(mDiv);
+
+  /* Save */
+  form.appendChild(h("button",{className:"btn-save",onClick:()=>{if(!b.beanId)return;const rec={...b,id:Date.now().toString(),createdAt:new Date().toISOString()};state.records.unshift(rec);state.brew=initBrew();state.brew.beanId=b.beanId;state.showTaste=false;state.showPours=false;state.view="list";save();render();}},"記録する"));
+
+  app.appendChild(form);
+}
+
+function renderBeanSelector(){
+  const b=state.brew,beans=state.beans;
+  const wrap=h("div",{style:{display:"flex",flexDirection:"column",gap:6}});
+  wrap.appendChild(h("span",{className:"lbl"},"豆"));
+
+  const selBean=beans.find(x=>x.id===b.beanId);
+  if(selBean&&!state.addingBean){
+    const info=h("div",{style:{background:"rgba(200,149,108,0.08)",borderRadius:"10px",padding:"10px 14px",border:"1px solid rgba(200,149,108,0.15)"}});
+    info.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:6}},h("span",{style:{fontSize:"14px"}},beanFlag(selBean)),h("span",{style:{fontSize:"15px",fontWeight:600,color:"#ede4da"}},beanName(selBean))));
+    if(selBean.altitude)info.appendChild(h("div",{style:{fontSize:"12px",color:"#8a7b6e",marginTop:"2px"}},selBean.altitude+"m"));
+    wrap.appendChild(info);
+  }
+
+  if(!state.addingBean){
+    if(beans.length>0){
+      const chips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:6}});
+      beans.forEach(bn=>{
+        const bw=h("div",{style:{display:"flex",gap:0}});
+        bw.appendChild(h("button",{style:{background:b.beanId===bn.id?"rgba(200,149,108,0.3)":"rgba(200,149,108,0.1)",border:`1px solid ${b.beanId===bn.id?"rgba(200,149,108,0.5)":"rgba(200,149,108,0.15)"}`,borderRadius:"10px 0 0 10px",padding:"8px 10px 8px 14px",color:b.beanId===bn.id?"#ede4da":"#b8a590",fontSize:"14px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{b.beanId=bn.id;render();}},`${beanFlag(bn)} ${beanName(bn)}`));
+        bw.appendChild(h("button",{style:{background:b.beanId===bn.id?"rgba(200,149,108,0.2)":"rgba(200,149,108,0.06)",border:`1px solid ${b.beanId===bn.id?"rgba(200,149,108,0.5)":"rgba(200,149,108,0.15)"}`,borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 10px",color:"#8a7b6e",fontSize:"11px",cursor:"pointer",fontFamily:"inherit"},onClick:e=>{e.stopPropagation();state.viewingBean=state.viewingBean?.id===bn.id?null:bn;render();}},"ℹ"));
+        chips.appendChild(bw);
+      });wrap.appendChild(chips);
+    }
+    if(state.viewingBean){
+      const vb=state.viewingBean;
+      const vDiv=h("div",{style:{background:"rgba(30,24,18,0.95)",borderRadius:"12px",padding:"16px",border:"1px solid rgba(200,149,108,0.2)",animation:"fadeIn 0.2s ease"}});
+      const vHead=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}});
+      vHead.appendChild(h("span",{style:{fontSize:"16px",fontWeight:600,color:"#ede4da"}},`${beanFlag(vb)} ${beanName(vb)}`));
+      vHead.appendChild(h("button",{style:{background:"none",border:"none",color:"#8a7b6e",fontSize:"18px",cursor:"pointer"},onClick:()=>{state.viewingBean=null;render();}},"✕"));
+      vDiv.appendChild(vHead);
+      const details=h("div",{style:{display:"flex",flexDirection:"column",gap:"6px",fontSize:"13px",color:"#b8a590"}});
+      if(vb.country)details.appendChild(h("div",null,"🌍 国: "+vb.country));
+      if(vb.farm)details.appendChild(h("div",null,"🏔 農園: "+vb.farm));
+      if(vb.altitude)details.appendChild(h("div",null,"📐 標高: "+vb.altitude+"m"));
+      if(vb.process)details.appendChild(h("div",null,"⚙️ 精製: "+vb.process));
+      if(vb.name)details.appendChild(h("div",null,"📝 カスタム名: "+vb.name));
+      vDiv.appendChild(details);wrap.appendChild(vDiv);
+    }
+    wrap.appendChild(h("button",{className:"btn-add",onClick:()=>{state.addingBean=true;state._newBean={country:"",farm:"",process:"",altitude:"",name:""};render();}},"＋ 新しい豆を追加"));
+  }else{
+    const nb=state._newBean;
+    const panel=h("div",{className:"bean-panel"});
+    /* Country */
+    const cDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+    cDiv.appendChild(h("span",{className:"slbl"},"国 *"));
+    const cInp=h("input",{className:"inp",placeholder:"例: エチオピア",value:nb.country,onInput:e=>{nb.country=e.target.value;updateBeanPreview();}});
+    cDiv.appendChild(cInp);panel.appendChild(cDiv);
+    /* Farm */
+    const fDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+    fDiv.appendChild(h("span",{className:"slbl"},"農園"));
+    fDiv.appendChild(h("input",{className:"inp",placeholder:"例: Finca La Esperanza",value:nb.farm,onInput:e=>{nb.farm=e.target.value;updateBeanPreview();}}));
+    panel.appendChild(fDiv);
+    /* Process */
+    const pDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+    pDiv.appendChild(h("span",{className:"slbl"},"精製方法"));
+    const pChips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:4}});
+    PROCS.forEach(p=>{pChips.appendChild(h("button",{className:"chip"+(nb.process===p?" on":""),onClick:()=>{nb.process=nb.process===p?"":p;updateBeanPreview();}},p));});
+    pDiv.appendChild(pChips);panel.appendChild(pDiv);
+    /* Altitude toggle */
+    panel.appendChild(h("button",{style:{background:"none",border:"none",padding:0,color:"#6b5a4e",fontSize:"12px",cursor:"pointer",textAlign:"left"},onClick:()=>{state.showBeanDetail=!state.showBeanDetail;render();}},state.showBeanDetail?"▾ 標高を閉じる":"▸ 標高を追加（任意）"));
+    if(state.showBeanDetail){
+      const aDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+      aDiv.appendChild(h("span",{className:"slbl"},"標高（m）"));
+      aDiv.appendChild(h("input",{className:"inp",placeholder:"例: 1800",inputMode:"numeric",value:nb.altitude,onInput:e=>{nb.altitude=e.target.value;}}));
+      panel.appendChild(aDiv);
+    }
+    /* Custom name toggle */
+    panel.appendChild(h("button",{style:{background:"none",border:"none",padding:0,color:"#6b5a4e",fontSize:"12px",cursor:"pointer",textAlign:"left"},onClick:()=>{state.showBeanName=!state.showBeanName;render();}},state.showBeanName?"▾ カスタム名を閉じる":"▸ カスタム名をつける（任意）"));
+    if(state.showBeanName){
+      const nRow=h("div",{style:{display:"flex",gap:6}});
+      nRow.appendChild(h("input",{className:"inp",placeholder:"例: いつものエチオピア",value:nb.name,onInput:e=>{nb.name=e.target.value;updateBeanPreview();}}));
+      const vb=h("button",{className:"voice-btn",style:{width:"38px",height:"38px"},onClick:()=>{const r=startVoice(t=>{nb.name+=t;render();});if(r)r.start();}},"🎙");
+      nRow.appendChild(vb);panel.appendChild(nRow);
+    }
+    /* Preview */
+    const prev=h("div",{className:"preview-box",id:"bean-preview"});
+    prev.appendChild(h("span",{style:{fontSize:"10px",color:"#6b5a4e"}},"表示名:"));
+    prev.appendChild(h("span",{style:{fontSize:"13px",color:"#b8a590",fontWeight:600}},`${beanFlag(nb)} ${beanName(nb)}`));
+    panel.appendChild(prev);
+    /* AI helper */
+    panel.appendChild(renderAIHelper(nb));
+    /* Buttons */
+    const btns=h("div",{style:{display:"flex",gap:6}});
+    btns.appendChild(h("button",{style:{flex:1,background:"rgba(200,149,108,0.2)",border:"none",borderRadius:"10px",padding:"8px",color:"#ede4da",fontSize:"14px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{if(!nb.country.trim()&&!nb.name.trim())return;const bean={...nb,id:Date.now().toString()};state.beans.push(bean);b.beanId=bean.id;state.addingBean=false;state.showBeanDetail=false;state.showBeanName=false;save();render();}},"追加"));
+    btns.appendChild(h("button",{style:{background:"none",border:"1px solid rgba(200,149,108,0.15)",borderRadius:"10px",padding:"8px 14px",color:"#8a7b6e",fontSize:"14px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.addingBean=false;state.showBeanDetail=false;state.showBeanName=false;render();}},"キャンセル"));
+    panel.appendChild(btns);
+    wrap.appendChild(panel);
+  }
+  return wrap;
+}
+
+function updateBeanPreview(){const p=document.getElementById("bean-preview");if(p){const nb=state._newBean;p.innerHTML="";p.appendChild(h("span",{style:{fontSize:"10px",color:"#6b5a4e"}},"表示名:"));p.appendChild(h("span",{style:{fontSize:"13px",color:"#b8a590",fontWeight:600}},`${beanFlag(nb)} ${beanName(nb)}`));}}
+
+function renderAIHelper(nb){
+  const wrap=h("div",{style:{display:"flex",flexDirection:"column",gap:6}});
+  const prompts=[{id:"photo",label:"📸 パッケージ写真から",text:"この画像はコーヒー豆のパッケージです。以下の情報を読み取って、それぞれ改行して教えてください。\n\n・豆の名前\n・生産国\n・農園名\n・標高\n・精製方法（Washed / Natural / Honey / Anaerobic / Carbonic Maceration / Wet Hulled / Other）"},{id:"url",label:"🔗 商品URLから",text:"以下のURLのコーヒー豆の情報を読み取って、それぞれ改行して教えてください。\n\nURL: （ここにURLを貼る）\n\n・豆の名前\n・生産国\n・農園名\n・標高\n・精製方法（Washed / Natural / Honey / Anaerobic / Carbonic Maceration / Wet Hulled / Other）"},{id:"name",label:"☕ 豆の名前から",text:"以下のコーヒー豆について、わかる範囲で情報を教えてください。\n\n豆の名前: （ここに豆の名前を入力）\n\n・生産国\n・農園名\n・標高\n・精製方法（Washed / Natural / Honey / Anaerobic / Carbonic Maceration / Wet Hulled / Other）"}];
+  wrap.appendChild(h("button",{className:"ai-btn",onClick:()=>{state.aiOpen=!state.aiOpen;render();}},h("span",{style:{fontSize:"14px"}},"✨"),state.aiOpen?"AIで入力を楽にする ▾":"AIで入力を楽にする ▸"));
+  if(state.aiOpen){
+    const box=h("div",{className:"ai-box"});
+    box.appendChild(h("p",{style:{fontSize:"12px",color:"#8a9bc0",margin:0,fontWeight:600}},"① プロンプトをコピー"));
+    prompts.forEach(p=>{box.appendChild(h("button",{className:"ai-prompt"+(state.aiCopied===p.id?" copied":""),onClick:async()=>{try{await navigator.clipboard.writeText(p.text)}catch{const t=document.createElement("textarea");t.value=p.text;document.body.appendChild(t);t.select();document.execCommand("copy");document.body.removeChild(t);}state.aiCopied=p.id;render();setTimeout(()=>{state.aiCopied=null;render();},2000);}},h("span",null,p.label),h("span",{style:{fontSize:"11px",opacity:0.7}},state.aiCopied===p.id?"✓ コピー済":"コピー")));});
+    const pasteDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:6,borderTop:"1px solid rgba(120,140,200,0.1)",paddingTop:"10px"}});
+    pasteDiv.appendChild(h("p",{style:{fontSize:"12px",color:"#8a9bc0",margin:0,fontWeight:600}},"② AIの回答を貼り付け"));
+    const ta=h("textarea",{placeholder:"AIの回答をそのまま貼り付け",rows:4,style:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(120,140,200,0.2)",borderRadius:"8px",padding:"10px 12px",color:"#ede4da",fontSize:"13px",outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.6},onInput:e=>{state.aiPaste=e.target.value;state.aiResult=null;}});
+    ta.value=state.aiPaste;pasteDiv.appendChild(ta);
+    if(state.aiPaste.trim()&&!state.aiResult){pasteDiv.appendChild(h("button",{style:{background:"rgba(120,140,200,0.15)",border:"1px solid rgba(120,140,200,0.3)",borderRadius:"8px",padding:"8px 14px",color:"#a0b0d0",fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.aiResult=parseAI(state.aiPaste);render();}},"読み取る"));}
+    box.appendChild(pasteDiv);
+    if(state.aiResult){
+      const r=state.aiResult;
+      const rDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:6,borderTop:"1px solid rgba(120,140,200,0.1)",paddingTop:"10px",animation:"fadeIn 0.2s ease"}});
+      rDiv.appendChild(h("p",{style:{fontSize:"12px",color:"#8a9bc0",margin:0,fontWeight:600}},"③ 確認して反映"));
+      const rBox=h("div",{style:{background:"rgba(200,149,108,0.06)",borderRadius:"8px",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"4px"}});
+      if(r.name)rBox.appendChild(h("div",{style:{fontSize:"13px",color:"#b8a590"},innerHTML:`📝 名前: <span style="color:#ede4da">${r.name}</span>`}));
+      if(r.country)rBox.appendChild(h("div",{style:{fontSize:"13px",color:"#b8a590"},innerHTML:`🌍 国: <span style="color:#ede4da">${r.country}</span>`}));
+      if(r.farm)rBox.appendChild(h("div",{style:{fontSize:"13px",color:"#b8a590"},innerHTML:`🏔 農園: <span style="color:#ede4da">${r.farm}</span>`}));
+      if(r.altitude)rBox.appendChild(h("div",{style:{fontSize:"13px",color:"#b8a590"},innerHTML:`📐 標高: <span style="color:#ede4da">${r.altitude}m</span>`}));
+      if(r.process)rBox.appendChild(h("div",{style:{fontSize:"13px",color:"#b8a590"},innerHTML:`⚙️ 精製: <span style="color:#ede4da">${r.process}</span>`}));
+      rDiv.appendChild(rBox);
+      const rBtns=h("div",{style:{display:"flex",gap:6}});
+      rBtns.appendChild(h("button",{style:{flex:1,background:"rgba(100,180,120,0.2)",border:"1px solid rgba(100,180,120,0.3)",borderRadius:"8px",padding:"8px",color:"#8ac090",fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{if(r.name){nb.name=r.name;state.showBeanName=true;}if(r.country)nb.country=r.country;if(r.farm)nb.farm=r.farm;if(r.altitude){nb.altitude=r.altitude;state.showBeanDetail=true;}if(r.process)nb.process=r.process;state.aiPaste="";state.aiResult=null;render();}},"フォームに反映"));
+      rBtns.appendChild(h("button",{style:{background:"none",border:"1px solid rgba(120,140,200,0.15)",borderRadius:"8px",padding:"8px 12px",color:"#7a8aaa",fontSize:"13px",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.aiResult=null;state.aiPaste="";render();}},"やり直す"));
+      rDiv.appendChild(rBtns);box.appendChild(rDiv);
+    }
+    wrap.appendChild(box);
+  }
+  return wrap;
+}
+
+function renderList(app){
+  const list=h("div",{style:{animation:"fadeIn 0.3s ease"}});
+  if(state.records.length===0){
+    list.appendChild(h("div",{className:"empty"},h("div",{style:{fontSize:"40px",marginBottom:"16px"}},"☕"),h("p",{style:{fontSize:"14px",lineHeight:1.8}},"まだ記録がありません。"),h("p",{style:{fontSize:"14px",lineHeight:1.8}},"最初の一杯を記録してみましょう。")));
+  }else{
+    list.appendChild(h("div",{style:{fontSize:"12px",color:"#6b5a4e",marginBottom:"4px"}},`${state.records.length} 件の記録`));
+    state.records.forEach(rec=>{list.appendChild(renderCard(rec));});
+  }
+  app.appendChild(list);
+}
+
+function renderCard(rec){
+  const bean=state.beans.find(b=>b.id===rec.beanId);
+  const bn=bean?beanName(bean):"（豆名なし）";
+  const fl=bean?beanFlag(bean):"";
+  const gr=GRINDERS[rec.grinderId];
+  const gn=gr?gr.name:rec.grinderId;
+  const exp=state.expandedCard===rec.id;
+
+  const card=h("div",{className:"card",style:{marginBottom:"10px"},onClick:()=>{state.expandedCard=exp?null:rec.id;render();}});
+  const top=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}});
+  const left=h("div",{style:{flex:1}});
+  const nameRow=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}});
+  if(fl)nameRow.appendChild(h("span",{style:{fontSize:"14px"}},fl));
+  nameRow.appendChild(h("span",{style:{fontSize:"15px",fontWeight:600,color:"#ede4da"}},bn));
+  nameRow.appendChild(h("span",{style:{fontSize:"14px",color:"#c8956c"}},"★".repeat(rec.overall||3)+"☆".repeat(5-(rec.overall||3))));
+  left.appendChild(nameRow);
+  const meta=h("div",{style:{fontSize:"12px",color:"#8a7b6e",display:"flex",gap:"8px",flexWrap:"wrap"}});
+  meta.appendChild(h("span",null,fmtDate(rec.createdAt)));
+  if(rec.dripper)meta.appendChild(h("span",null,rec.dripper));
+  left.appendChild(meta);top.appendChild(left);
+  const right=h("div",{style:{display:"flex",gap:"8px",fontSize:"12px",color:"#b8a590",flexWrap:"wrap",justifyContent:"flex-end",maxWidth:"50%"}});
+  if(rec.grind!=null)right.appendChild(h("span",null,`${gn} ${rec.grind}`));
+  if(rec.temp)right.appendChild(h("span",null,rec.temp+"℃"));
+  if(rec.dose&&rec.water)right.appendChild(h("span",{style:{color:"#c8956c",fontWeight:600}},`1:${(rec.water/rec.dose).toFixed(1)}`));
+  top.appendChild(right);card.appendChild(top);
+
+  if(exp){
+    const det=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(200,149,108,0.1)"}});
+    const info=h("div",{style:{fontSize:"12px",color:"#8a7b6e",marginBottom:"8px",display:"flex",gap:"8px",flexWrap:"wrap"}});
+    if(rec.dose)info.appendChild(h("span",null,rec.dose+"g"));
+    if(rec.water)info.appendChild(h("span",null,"→ "+rec.water+"g"));
+    if(rec.brewTimeMin>0||rec.brewTimeSec>0)info.appendChild(h("span",null,`⏱ ${rec.brewTimeMin}:${String(rec.brewTimeSec||0).padStart(2,"0")}`));
+    if(bean?.farm)info.appendChild(h("span",null,"🏔 "+bean.farm));
+    if(bean?.altitude)info.appendChild(h("span",null,"📐 "+bean.altitude+"m"));
+    det.appendChild(info);
+    if(rec.pours?.length>0){
+      const pDiv=h("div",{style:{marginBottom:"8px"}});
+      pDiv.appendChild(h("div",{style:{fontSize:"11px",color:"#6b5a4e",marginBottom:"4px"}},"注湯"));
+      const pList=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
+      rec.pours.forEach((p,i)=>{pList.appendChild(h("div",{style:{display:"flex",gap:"8px",fontSize:"12px",color:"#b8a590"}},h("span",{style:{color:"#8a7b6e",minWidth:"44px"}},i===0?"蒸らし":`${i}投目`),h("span",null,p.water+"g"),h("span",null,p.timeSec+"秒")));});
+      pDiv.appendChild(pList);det.appendChild(pDiv);
+    }
+    const hasTaste=TASTE.some(t=>rec[t.k]>0)||rec.overall>0;
+    if(hasTaste){det.appendChild(h("div",{innerHTML:radarSVG(rec)}));}
+    if(rec.note)det.appendChild(h("p",{style:{fontSize:"13px",color:"#9a8b7e",margin:0,lineHeight:1.5}},rec.note));
+    det.appendChild(h("button",{className:"btn-del",onClick:e=>{e.stopPropagation();state.records=state.records.filter(r=>r.id!==rec.id);save();render();}},"削除"));
+    card.appendChild(det);
+  }
+  return card;
+}
+
+/* ── Init ── */
+render();
+if("serviceWorker"in navigator){navigator.serviceWorker.register("./sw.js").catch(()=>{});}
 </script>
 </body>
 </html>
