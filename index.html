@@ -75,8 +75,8 @@ const LS={get(k,fb){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f
 const GRINDERS={"fellow_opus":{name:"Fellow Opus",min:1,max:11,step:0.25,default:5},"timemore_xlite":{name:"Timemore X Lite",min:3,max:24,step:0.5,default:14},"comandante_c40":{name:"Comandante C40",min:0,max:45,step:1,default:25},"other":{name:"その他",min:1,max:40,step:1,default:15}};
 const DRIPPERS=["Hario V60","Origami","OREA","Kalita Wave","Chemex","AeroPress","French Press","Clever","その他"];
 const TEMPS=[80,82,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,100];
-const DOSES=[10,12,13,14,15,16,17,18,19,20,22,24,25,30];
-const WATERS=[150,180,200,220,225,230,240,250,260,270,280,300,350,400,500];
+const DOSES=[10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+const WATERS=[150,180,200,220,225,230,240,250,260,270,280,300,350,400,450,500];
 const PROCS=["Washed","Natural","Honey","Anaerobic","Carbonic Maceration","Wet Hulled","Other"];
 const TASTE=[{k:"acidity",l:"酸味",e:"🍋"},{k:"sweetness",l:"甘味",e:"🍯"},{k:"bitterness",l:"苦味",e:"🫘"},{k:"body",l:"濃度感",e:"☕"}];
 const RADAR=[{k:"overall",l:"おいしさ"},...TASTE.map(t=>({k:t.k,l:t.l}))];
@@ -85,7 +85,7 @@ const POUR_WATERS=[10,15,20,25,30,35,40,45,50,60,70,80,90,100,110,120,130,140,15
 const POUR_TIMES=[5,10,15,20,25,30,35,40,45,50,55,60,70,80,90,100,110,120];
 const ROAST_LEVELS=["浅煎り","中煎り","中深煎り","深煎り"];
 
-function beanName(b){if(b.name?.trim())return b.name;const p=[];if(b.country)p.push(b.country);if(b.farm)p.push(b.farm);if(b.process)p.push(`(${b.process})`);return p.length?p.join(" / "):"（名称未設定）";}
+function beanName(b){const p=[];if(b.country)p.push(b.country);if(b.name?.trim()){p.push(b.name);return p.join(" / ");}if(b.farm)p.push(b.farm);if(b.process)p.push(`(${b.process})`);return p.length?p.join(" / "):"（名称未設定）";}
 function beanFlag(b){return FLAGS[b.country]||(b.country?"🌍":"");}
 function fmtDate(iso){const d=new Date(iso);return`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
 function h(tag,props,...ch){const el=document.createElement(tag);if(props)Object.entries(props).forEach(([k,v])=>{if(k==="style"&&typeof v==="object")Object.assign(el.style,v);else if(k.startsWith("on"))el.addEventListener(k.slice(2).toLowerCase(),v);else if(k==="className")el.className=v;else if(k==="innerHTML")el.innerHTML=v;else el.setAttribute(k,v);});ch.flat(9).forEach(c=>{if(c==null||c===false)return;el.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c);});return el;}
@@ -144,12 +144,14 @@ function renderForm(app){
   gsDiv.appendChild(h("span",{className:"lbl"},`挽き目（${g.name}）`));
   const gsRow=h("div",{style:{display:"flex",alignItems:"center",gap:12}});
   const displayVal=g.step<1?b.grind.toFixed(g.step===0.25?2:1):b.grind.toString();
-  gsRow.appendChild(h("span",{style:{fontSize:"22px",fontWeight:700,color:"#c8956c",minWidth:"48px",textAlign:"center",fontFamily:"'Cormorant Garamond',Georgia,serif"}},displayVal));
+  const grindNum=h("span",{id:"grind-num",style:{fontSize:"22px",fontWeight:700,color:"#c8956c",minWidth:"48px",textAlign:"center",fontFamily:"'Cormorant Garamond',Georgia,serif"}},displayVal);
+  gsRow.appendChild(grindNum);
   const sliderWrap=h("div",{style:{flex:1,position:"relative",padding:"8px 0"}});
   const pct=((b.grind-g.min)/(g.max-g.min))*100;
   sliderWrap.appendChild(h("div",{style:{position:"absolute",top:"50%",left:0,right:0,height:"4px",background:"rgba(200,149,108,0.15)",borderRadius:"2px",transform:"translateY(-50%)"}}));
-  sliderWrap.appendChild(h("div",{style:{position:"absolute",top:"50%",left:0,width:pct+"%",height:"4px",background:"linear-gradient(90deg,#c8956c,#a07050)",borderRadius:"2px",transform:"translateY(-50%)"}}));
-  const slider=h("input",{type:"range",min:g.min,max:g.max,step:g.step,value:b.grind,style:{width:"100%",position:"relative",zIndex:2},onInput:e=>{b.grind=parseFloat(e.target.value);render();}});
+  const fillBar=h("div",{id:"grind-fill",style:{position:"absolute",top:"50%",left:0,width:pct+"%",height:"4px",background:"linear-gradient(90deg,#c8956c,#a07050)",borderRadius:"2px",transform:"translateY(-50%)"}});
+  sliderWrap.appendChild(fillBar);
+  const slider=h("input",{type:"range",min:g.min,max:g.max,step:g.step,value:b.grind,style:{width:"100%",position:"relative",zIndex:2},onInput:e=>{const v=parseFloat(e.target.value);b.grind=v;const num=document.getElementById("grind-num");if(num)num.textContent=g.step<1?v.toFixed(g.step===0.25?2:1):v.toString();const fill=document.getElementById("grind-fill");if(fill)fill.style.width=((v-g.min)/(g.max-g.min)*100)+"%";}});
   sliderWrap.appendChild(slider);gsRow.appendChild(sliderWrap);gsDiv.appendChild(gsRow);
   gsDiv.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"10px",color:"#6b5a4e",padding:"0 4px"}},h("span",null,`細 ← ${g.min}`),h("span",null,`${g.max} → 粗`)));
   form.appendChild(gsDiv);
