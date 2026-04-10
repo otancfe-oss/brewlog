@@ -93,7 +93,7 @@ function sel(opts,val,onChange,cls="sel"){const w=h("div",{className:"sel-wrap"}
 
 /* ── State ── */
 const FONT_SIZES={S:{label:"小",base:13},M:{label:"中",base:15},L:{label:"大",base:17}};
-let state={view:"list",records:LS.get("brewlog_records",[]),beans:LS.get("brewlog_beans_v3",[]),equip:LS.get("brewlog_equip",{grinderId:"fellow_opus",dripper:"Hario V60"}),fontSize:LS.get("brewlog_fontsize","M"),brew:null,showTaste:false,showPours:false,addingBean:false,showBeanList:false,showBeanDetail:false,showBeanName:false,viewingBean:null,editingBean:null,aiOpen:false,aiCopied:null,aiPaste:"",aiResult:null,expandedCard:null};
+let state={view:"list",records:LS.get("brewlog_records",[]),beans:LS.get("brewlog_beans_v3",[]),equip:LS.get("brewlog_equip",{grinderId:"fellow_opus",dripper:"Hario V60"}),fontSize:LS.get("brewlog_fontsize","M"),brew:null,showTaste:false,showPours:false,addingBean:false,showBeanList:false,showBeanDetail:false,showBeanName:false,viewingBean:null,editingBean:null,editingRecord:null,aiOpen:false,aiCopied:null,aiPaste:"",aiResult:null,expandedCard:null};
 function initBrew(){const e=state.equip;const g=GRINDERS[e.grinderId]||GRINDERS.fellow_opus;return{beanId:"",grinderId:e.grinderId,dripper:e.dripper,grind:g.default,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,note:""};}
 state.brew=initBrew();
 function save(){LS.set("brewlog_records",state.records);LS.set("brewlog_beans_v3",state.beans);LS.set("brewlog_equip",state.equip);}
@@ -217,7 +217,8 @@ function renderForm(app){
   const oDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:6}});
   oDiv.appendChild(h("span",{className:"lbl"},"おいしさ"));
   const stars=h("div",{style:{display:"flex",gap:4}});
-  for(let i=1;i<=5;i++){stars.appendChild(h("button",{className:"star",style:{opacity:i<=b.overall?1:0.25,transform:i<=b.overall?"scale(1.1)":"scale(0.9)"},onClick:()=>{b.overall=i;render();}},"★"));}
+  const buildStars=()=>{stars.innerHTML="";for(let i=1;i<=5;i++){stars.appendChild(h("button",{className:"star",style:{opacity:i<=b.overall?1:0.25,transform:i<=b.overall?"scale(1.1)":"scale(0.9)"},onClick:()=>{b.overall=i;buildStars();}},"★"));}};
+  buildStars();
   oDiv.appendChild(stars);form.appendChild(oDiv);
 
   /* Taste */
@@ -228,7 +229,8 @@ function renderForm(app){
       const row=h("div",{className:"taste-row"});
       row.appendChild(h("span",{className:"taste-lbl"},`${t.e} ${t.l}`));
       const btns=h("div",{style:{display:"flex",gap:3,flex:1}});
-      for(let v=1;v<=5;v++){btns.appendChild(h("button",{className:"taste-btn",style:{background:v<=b[t.k]?"#c8956c":"rgba(200,149,108,0.15)",color:v<=b[t.k]?"#1a1410":"#6b5a4e",fontWeight:v<=b[t.k]?700:400},onClick:()=>{b[t.k]=b[t.k]===v?0:v;render();}},v));}
+      const buildBtns=()=>{btns.innerHTML="";for(let v=1;v<=5;v++){btns.appendChild(h("button",{className:"taste-btn",style:{background:v<=b[t.k]?"#c8956c":"rgba(200,149,108,0.15)",color:v<=b[t.k]?"#1a1410":"#6b5a4e",fontWeight:v<=b[t.k]?700:400},onClick:()=>{b[t.k]=b[t.k]===v?0:v;buildBtns();}},v));}};
+      buildBtns();
       row.appendChild(btns);tDiv.appendChild(row);
     });form.appendChild(tDiv);
   }
@@ -496,50 +498,129 @@ function renderCard(rec){
   const exp=state.expandedCard===rec.id;
 
   const card=h("div",{className:"card",style:{marginBottom:"10px"},onClick:()=>{state.expandedCard=exp?null:rec.id;render();}});
-  const top=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}});
-  const left=h("div",{style:{flex:1}});
-  const nameRow=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}});
-  if(fl)nameRow.appendChild(h("span",{style:{fontSize:"14px"}},fl));
-  nameRow.appendChild(h("span",{style:{fontSize:"15px",fontWeight:600,color:"#ede4da"}},bn));
-  nameRow.appendChild(h("span",{style:{fontSize:"14px",color:"#c8956c"}},"★".repeat(rec.overall||3)+"☆".repeat(5-(rec.overall||3))));
-  left.appendChild(nameRow);
-  const meta=h("div",{style:{fontSize:"12px",color:"#8a7b6e",display:"flex",gap:"8px",flexWrap:"wrap"}});
-  meta.appendChild(h("span",null,fmtDate(rec.createdAt)));
-  if(rec.dripper)meta.appendChild(h("span",null,rec.dripper));
-  left.appendChild(meta);top.appendChild(left);
-  const right=h("div",{style:{display:"flex",gap:"8px",fontSize:"12px",color:"#b8a590",flexWrap:"wrap",justifyContent:"flex-end",maxWidth:"50%"}});
-  if(rec.grind!=null)right.appendChild(h("span",null,`${gn} ${rec.grind}`));
-  if(rec.temp)right.appendChild(h("span",null,rec.temp+"℃"));
-  if(rec.dose&&rec.water)right.appendChild(h("span",{style:{color:"#c8956c",fontWeight:600}},`1:${(rec.water/rec.dose).toFixed(1)}`));
-  top.appendChild(right);card.appendChild(top);
+  /* Row 1: flag + bean name (full width) */
+  const nameRow=h("div",{style:{display:"flex",alignItems:"flex-start",gap:"8px",marginBottom:"6px"}});
+  if(fl)nameRow.appendChild(h("span",{style:{fontSize:"1em",flexShrink:0,lineHeight:1.4}},fl));
+  nameRow.appendChild(h("span",{style:{fontSize:"1em",fontWeight:600,color:"#ede4da",lineHeight:1.4,flex:1}},bn));
+  card.appendChild(nameRow);
+  /* Row 2: star rating */
+  card.appendChild(h("div",{style:{fontSize:"0.93em",color:"#c8956c",marginBottom:"8px"}},"★".repeat(rec.overall||3)+"☆".repeat(5-(rec.overall||3))));
+  /* Row 3: date · dripper */
+  const metaParts=[fmtDate(rec.createdAt)];
+  if(rec.dripper)metaParts.push(rec.dripper);
+  card.appendChild(h("div",{style:{fontSize:"0.8em",color:"#8a7b6e",marginBottom:"4px"}},metaParts.join(" · ")));
+  /* Row 4: grinder · temp · ratio */
+  const paramParts=[];
+  if(rec.grind!=null)paramParts.push(`${gn} ${rec.grind}`);
+  if(rec.temp)paramParts.push(rec.temp+"℃");
+  const paramRow=h("div",{style:{fontSize:"0.8em",color:"#b8a590",display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center"}});
+  if(paramParts.length)paramRow.appendChild(h("span",null,paramParts.join(" · ")));
+  if(rec.dose&&rec.water){
+    if(paramParts.length)paramRow.appendChild(h("span",{style:{color:"#6b5a4e"}},"·"));
+    paramRow.appendChild(h("span",{style:{color:"#c8956c",fontWeight:600}},`1:${(rec.water/rec.dose).toFixed(1)}`));
+  }
+  card.appendChild(paramRow);
 
   if(exp){
-    const det=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(200,149,108,0.1)"}});
-    const info=h("div",{style:{fontSize:"12px",color:"#8a7b6e",marginBottom:"8px",display:"flex",flexDirection:"column",gap:"4px"}});
-    if(rec.dose)info.appendChild(h("div",null,"粉量: "+rec.dose+"g"));
-    if(rec.water)info.appendChild(h("div",null,"湯量: "+rec.water+"g"));
-    if(rec.dose&&rec.water)info.appendChild(h("div",null,"比率: ",h("span",{style:{color:"#c8956c",fontWeight:600}},"1:"+(rec.water/rec.dose).toFixed(1))));
-    if(rec.brewTimeMin>0||rec.brewTimeSec>0)info.appendChild(h("div",null,"抽出時間: "+rec.brewTimeMin+":"+String(rec.brewTimeSec||0).padStart(2,"0")));
-    if(bean?.country)info.appendChild(h("div",null,"国: "+bean.country));
-    if(bean?.farm)info.appendChild(h("div",null,"農園: "+bean.farm));
-    if(bean?.altitude)info.appendChild(h("div",null,"標高: "+bean.altitude+"m"));
-    if(bean?.process)info.appendChild(h("div",null,"精製: "+bean.process));
-    if(bean?.shop)info.appendChild(h("div",null,"購入店: "+bean.shop));
-    if(bean?.roast)info.appendChild(h("div",null,"焙煎度: "+bean.roast));
-    if(bean?.roastDate){const days=Math.floor((new Date(rec.createdAt).getTime()-new Date(bean.roastDate).getTime())/(1000*60*60*24));if(days>=0)info.appendChild(h("div",null,"焙煎日: "+bean.roastDate+" （"+days+"日目）"));}
-    det.appendChild(info);
-    if(rec.pours?.length>0){
-      const pDiv=h("div",{style:{marginBottom:"8px"}});
-      pDiv.appendChild(h("div",{style:{fontSize:"11px",color:"#6b5a4e",marginBottom:"4px"}},"注湯"));
-      const pList=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
-      rec.pours.forEach((p,i)=>{pList.appendChild(h("div",{style:{display:"flex",gap:"8px",fontSize:"12px",color:"#b8a590"}},h("span",{style:{color:"#8a7b6e",minWidth:"44px"}},i===0?"蒸らし":`${i}投目`),h("span",null,p.water+"g"),h("span",null,p.timeSec+"秒")));});
-      pDiv.appendChild(pList);det.appendChild(pDiv);
+    /* Check if editing this record */
+    if(state.editingRecord&&state.editingRecord.id===rec.id){
+      const er=state.editingRecord;
+      const eDiv=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(200,149,108,0.1)"},onClick:e=>e.stopPropagation()});
+      eDiv.appendChild(h("div",{style:{fontSize:"0.8em",color:"#c8956c",fontWeight:600,marginBottom:"10px"}},"記録を編集"));
+      const erg=GRINDERS[er.grinderId]||GRINDERS.fellow_opus;
+      /* Grinder select */
+      const grDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+      grDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"ミル"));
+      const grChips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:4}});
+      Object.keys(GRINDERS).forEach(k=>{const gi=GRINDERS[k];grChips.appendChild(h("button",{className:"chip"+(er.grinderId===k?" on":""),onClick:()=>{er.grinderId=k;er.grind=gi.default;render();}},gi.name));});
+      grDiv.appendChild(grChips);eDiv.appendChild(grDiv);
+      /* Grind */
+      const gdDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+      gdDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},`挽き目（${erg.name}）`));
+      const gdRow=h("div",{style:{display:"flex",alignItems:"center",gap:8}});
+      const gdVal=h("span",{style:{fontSize:"1.1em",fontWeight:700,color:"#c8956c",minWidth:"40px",textAlign:"center"}},erg.step<1?er.grind.toFixed(erg.step===0.25?2:1):er.grind.toString());
+      gdRow.appendChild(gdVal);
+      const gdSlider=h("input",{type:"range",min:erg.min,max:erg.max,step:erg.step,value:er.grind,style:{flex:1},onInput:e=>{er.grind=parseFloat(e.target.value);gdVal.textContent=erg.step<1?er.grind.toFixed(erg.step===0.25?2:1):er.grind.toString();}});
+      gdRow.appendChild(gdSlider);gdDiv.appendChild(gdRow);eDiv.appendChild(gdDiv);
+      /* Dripper */
+      const drDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+      drDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"ドリッパー"));
+      const drChips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:4}});
+      DRIPPERS.forEach(d=>{drChips.appendChild(h("button",{className:"chip"+(er.dripper===d?" on":""),onClick:()=>{er.dripper=d;render();}},d));});
+      drDiv.appendChild(drChips);eDiv.appendChild(drDiv);
+      /* Temp, Dose, Water */
+      const numFields=[["湯温","temp",TEMPS,"℃"],["粉量","dose",DOSES,"g"],["湯量","water",WATERS,"g"]];
+      const numGrid=h("div",{className:"grid3",style:{marginBottom:8}});
+      numFields.forEach(([lbl,k,opts,u])=>{const fd=h("div",{style:{display:"flex",flexDirection:"column",gap:3}});fd.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},lbl));fd.appendChild(sel(opts.map(o=>o+u),er[k]+u,v=>{er[k]=parseInt(v);render();}));numGrid.appendChild(fd);});
+      eDiv.appendChild(numGrid);
+      /* Brew time */
+      const btDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+      btDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"抽出時間"));
+      const btRow=h("div",{style:{display:"flex",gap:6}});
+      btRow.appendChild(sel([0,1,2,3,4,5,6,7,8,9,10],er.brewTimeMin,v=>{er.brewTimeMin=parseInt(v);}));
+      btRow.firstChild.querySelector(".sel-arr").textContent="分";
+      btRow.appendChild(sel([0,5,10,15,20,25,30,35,40,45,50,55].map(s=>String(s).padStart(2,"0")),String(er.brewTimeSec).padStart(2,"0"),v=>{er.brewTimeSec=parseInt(v);}));
+      btRow.lastChild.querySelector(".sel-arr").textContent="秒";
+      btDiv.appendChild(btRow);eDiv.appendChild(btDiv);
+      /* Overall */
+      const oDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+      oDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"おいしさ"));
+      const stars=h("div",{style:{display:"flex",gap:4}});
+      const buildStars=(container)=>{container.innerHTML="";for(let i=1;i<=5;i++){container.appendChild(h("button",{className:"star",style:{fontSize:"1.6em",opacity:i<=er.overall?1:0.25,transform:i<=er.overall?"scale(1.1)":"scale(0.9)"},onClick:()=>{er.overall=i;buildStars(container);}},"★"));}};
+      buildStars(stars);
+      oDiv.appendChild(stars);eDiv.appendChild(oDiv);
+      /* Taste */
+      TASTE.forEach(t=>{
+        const tRow=h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}});
+        tRow.appendChild(h("span",{style:{fontSize:"0.8em",color:"#b8a590",width:"65px"}},`${t.e} ${t.l}`));
+        const tBtns=h("div",{style:{display:"flex",gap:3,flex:1},id:"edit-taste-"+t.k});
+        const buildTasteBtns=(container,key)=>{container.innerHTML="";for(let v=1;v<=5;v++){const btn=h("button",{className:"taste-btn",style:{background:v<=er[key]?"#c8956c":"rgba(200,149,108,0.15)",color:v<=er[key]?"#1a1410":"#6b5a4e",fontWeight:v<=er[key]?700:400},onClick:()=>{er[key]=er[key]===v?0:v;buildTasteBtns(container,key);}},v);container.appendChild(btn);}};
+        buildTasteBtns(tBtns,t.k);
+        tRow.appendChild(tBtns);eDiv.appendChild(tRow);
+      });
+      /* Note */
+      const nDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginTop:8,marginBottom:8}});
+      nDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"メモ"));
+      const nTa=h("textarea",{rows:2,style:{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(200,149,108,0.2)",borderRadius:"8px",padding:"8px 10px",color:"#ede4da",fontSize:"0.87em",outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.5},onInput:e=>{er.note=e.target.value;}});
+      nTa.value=er.note||"";nDiv.appendChild(nTa);eDiv.appendChild(nDiv);
+      /* Save / Cancel */
+      const eBtns=h("div",{style:{display:"flex",gap:8}});
+      eBtns.appendChild(h("button",{style:{flex:1,background:"rgba(200,149,108,0.2)",border:"none",borderRadius:8,padding:"8px",color:"#ede4da",fontSize:"0.87em",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{const idx=state.records.findIndex(r=>r.id===er.id);if(idx>=0){state.records[idx]={...er};save();}state.editingRecord=null;render();}},"保存"));
+      eBtns.appendChild(h("button",{style:{background:"none",border:"1px solid rgba(200,149,108,0.15)",borderRadius:8,padding:"8px 12px",color:"#8a7b6e",fontSize:"0.87em",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.editingRecord=null;render();}},"キャンセル"));
+      eDiv.appendChild(eBtns);
+      card.appendChild(eDiv);
+    }else{
+      const det=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(200,149,108,0.1)"}});
+      const info=h("div",{style:{fontSize:"12px",color:"#8a7b6e",marginBottom:"8px",display:"flex",flexDirection:"column",gap:"4px"}});
+      if(rec.dose)info.appendChild(h("div",null,"粉量: "+rec.dose+"g"));
+      if(rec.water)info.appendChild(h("div",null,"湯量: "+rec.water+"g"));
+      if(rec.dose&&rec.water)info.appendChild(h("div",null,"比率: ",h("span",{style:{color:"#c8956c",fontWeight:600}},"1:"+(rec.water/rec.dose).toFixed(1))));
+      if(rec.brewTimeMin>0||rec.brewTimeSec>0)info.appendChild(h("div",null,"抽出時間: "+rec.brewTimeMin+":"+String(rec.brewTimeSec||0).padStart(2,"0")));
+      if(bean?.country)info.appendChild(h("div",null,"国: "+bean.country));
+      if(bean?.farm)info.appendChild(h("div",null,"農園: "+bean.farm));
+      if(bean?.altitude)info.appendChild(h("div",null,"標高: "+bean.altitude+"m"));
+      if(bean?.process)info.appendChild(h("div",null,"精製: "+bean.process));
+      if(bean?.shop)info.appendChild(h("div",null,"購入店: "+bean.shop));
+      if(bean?.roast)info.appendChild(h("div",null,"焙煎度: "+bean.roast));
+      if(bean?.roastDate){const days=Math.floor((new Date(rec.createdAt).getTime()-new Date(bean.roastDate).getTime())/(1000*60*60*24));if(days>=0)info.appendChild(h("div",null,"焙煎日: "+bean.roastDate+" （"+days+"日目）"));}
+      det.appendChild(info);
+      if(rec.pours?.length>0){
+        const pDiv=h("div",{style:{marginBottom:"8px"}});
+        pDiv.appendChild(h("div",{style:{fontSize:"11px",color:"#6b5a4e",marginBottom:"4px"}},"注湯"));
+        const pList=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
+        rec.pours.forEach((p,i)=>{pList.appendChild(h("div",{style:{display:"flex",gap:"8px",fontSize:"12px",color:"#b8a590"}},h("span",{style:{color:"#8a7b6e",minWidth:"44px"}},i===0?"蒸らし":`${i}投目`),h("span",null,p.water+"g"),h("span",null,p.timeSec+"秒")));});
+        pDiv.appendChild(pList);det.appendChild(pDiv);
+      }
+      const hasTaste=TASTE.some(t=>rec[t.k]>0)||rec.overall>0;
+      if(hasTaste){det.appendChild(h("div",{innerHTML:radarSVG(rec)}));}
+      if(rec.note)det.appendChild(h("p",{style:{fontSize:"13px",color:"#9a8b7e",margin:0,lineHeight:1.5}},rec.note));
+      /* Edit & Delete buttons */
+      const actBtns=h("div",{style:{display:"flex",gap:8,marginTop:"10px"}});
+      actBtns.appendChild(h("button",{style:{flex:1,background:"rgba(200,149,108,0.15)",border:"1px solid rgba(200,149,108,0.25)",borderRadius:8,padding:"8px",color:"#ede4da",fontSize:"0.8em",cursor:"pointer",fontFamily:"inherit"},onClick:e=>{e.stopPropagation();state.editingRecord={...rec,pours:rec.pours?rec.pours.map(p=>({...p})):[]};render();}},"✏️ 編集"));
+      actBtns.appendChild(h("button",{style:{flex:1,background:"none",border:"1px solid rgba(200,100,100,0.3)",borderRadius:8,padding:"8px",color:"#c87070",fontSize:"0.8em",cursor:"pointer",fontFamily:"inherit"},onClick:e=>{e.stopPropagation();if(!confirm("この記録を削除しますか？"))return;state.records=state.records.filter(r=>r.id!==rec.id);save();render();}},"🗑 削除"));
+      det.appendChild(actBtns);
+      card.appendChild(det);
     }
-    const hasTaste=TASTE.some(t=>rec[t.k]>0)||rec.overall>0;
-    if(hasTaste){det.appendChild(h("div",{innerHTML:radarSVG(rec)}));}
-    if(rec.note)det.appendChild(h("p",{style:{fontSize:"13px",color:"#9a8b7e",margin:0,lineHeight:1.5}},rec.note));
-    det.appendChild(h("button",{className:"btn-del",onClick:e=>{e.stopPropagation();state.records=state.records.filter(r=>r.id!==rec.id);save();render();}},"削除"));
-    card.appendChild(det);
   }
   return card;
 }
