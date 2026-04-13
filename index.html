@@ -216,10 +216,22 @@ function renderForm(app){
   /* Overall */
   const oDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:6}});
   oDiv.appendChild(h("span",{className:"lbl"},"おいしさ"));
-  const stars=h("div",{style:{display:"flex",gap:4}});
-  const buildStars=()=>{stars.innerHTML="";for(let i=1;i<=5;i++){stars.appendChild(h("button",{className:"star",style:{opacity:i<=b.overall?1:0.25,transform:i<=b.overall?"scale(1.1)":"scale(0.9)"},onClick:()=>{b.overall=i;buildStars();}},"★"));}};
-  buildStars();
-  oDiv.appendChild(stars);form.appendChild(oDiv);
+  const buildFormStars=(rating)=>{const r=Math.round(rating*2)/2;const d="M10 1 L12.6 7.3 L19.5 7.8 L14.2 12.3 L15.8 19 L10 15.3 L4.2 19 L5.8 12.3 L0.5 7.8 L7.4 7.3 Z";let html="";for(let i=1;i<=5;i++){if(r>=i)html+=`<svg width="26" height="26" viewBox="0 0 20 20"><path d="${d}" fill="#c8956c"/></svg>`;else if(r>=i-0.5)html+=`<svg width="26" height="26" viewBox="0 0 20 20"><defs><linearGradient id="fhs${i}"><stop offset="50%" stop-color="#c8956c"/><stop offset="50%" stop-color="rgba(200,149,108,0.2)"/></linearGradient></defs><path d="${d}" fill="url(#fhs${i})"/></svg>`;else html+=`<svg width="26" height="26" viewBox="0 0 20 20"><path d="${d}" fill="rgba(200,149,108,0.2)"/></svg>`;}return html;};
+  const oStars=h("div",{style:{display:"flex",gap:2,justifyContent:"center",marginBottom:4},innerHTML:buildFormStars(b.overall||3)});
+  oDiv.appendChild(oStars);
+  const oRow=h("div",{style:{display:"flex",alignItems:"center",gap:12}});
+  const oVal=h("span",{style:{fontSize:"1.6em",fontWeight:700,color:"#c8956c",minWidth:"56px",textAlign:"center",fontFamily:"'Cormorant Garamond',Georgia,serif"}},(b.overall||3).toFixed(1));
+  oRow.appendChild(oVal);
+  const oSliderWrap=h("div",{style:{flex:1,position:"relative",padding:"8px 0"}});
+  const oPct=((b.overall||3)/5)*100;
+  oSliderWrap.appendChild(h("div",{style:{position:"absolute",top:"50%",left:0,right:0,height:"4px",background:"rgba(200,149,108,0.15)",borderRadius:"2px",transform:"translateY(-50%)"}}));
+  const oFill=h("div",{style:{position:"absolute",top:"50%",left:0,width:oPct+"%",height:"4px",background:"linear-gradient(90deg,#c8956c,#a07050)",borderRadius:"2px",transform:"translateY(-50%)"}});
+  oSliderWrap.appendChild(oFill);
+  const oSlider=h("input",{type:"range",min:0,max:5,step:0.1,value:b.overall||3,style:{width:"100%",position:"relative",zIndex:2},onInput:e=>{const v=parseFloat(e.target.value);b.overall=v;oVal.textContent=v.toFixed(1);oFill.style.width=(v/5*100)+"%";oStars.innerHTML=buildFormStars(v);}});
+  oSliderWrap.appendChild(oSlider);
+  oRow.appendChild(oSliderWrap);
+  oDiv.appendChild(oRow);
+  form.appendChild(oDiv);
 
   /* Taste */
   form.appendChild(h("button",{className:"btn-toggle",onClick:()=>{state.showTaste=!state.showTaste;render();}},state.showTaste?"▾ 味の詳細を閉じる":"▸ 味の詳細を記録する（任意）"));
@@ -504,7 +516,13 @@ function renderCard(rec){
   nameRow.appendChild(h("span",{style:{fontSize:"1em",fontWeight:600,color:"#ede4da",lineHeight:1.4,flex:1}},bn));
   card.appendChild(nameRow);
   /* Row 2: star rating */
-  card.appendChild(h("div",{style:{fontSize:"0.93em",color:"#c8956c",marginBottom:"8px"}},"★".repeat(rec.overall||3)+"☆".repeat(5-(rec.overall||3))));
+  /* Row 2: rating (numeric + stars, rounded to 0.5) */
+  const ratingVal=rec.overall||0;
+  const rounded=Math.round(ratingVal*2)/2;
+  const starSVG=(fill)=>{const d="M10 1 L12.6 7.3 L19.5 7.8 L14.2 12.3 L15.8 19 L10 15.3 L4.2 19 L5.8 12.3 L0.5 7.8 L7.4 7.3 Z";if(fill===1)return `<svg width="16" height="16" viewBox="0 0 20 20" style="display:inline-block;vertical-align:middle"><path d="${d}" fill="#c8956c"/></svg>`;if(fill===0.5)return `<svg width="16" height="16" viewBox="0 0 20 20" style="display:inline-block;vertical-align:middle"><defs><linearGradient id="hs${rec.id}"><stop offset="50%" stop-color="#c8956c"/><stop offset="50%" stop-color="rgba(200,149,108,0.2)"/></linearGradient></defs><path d="${d}" fill="url(#hs${rec.id})"/></svg>`;return `<svg width="16" height="16" viewBox="0 0 20 20" style="display:inline-block;vertical-align:middle"><path d="${d}" fill="rgba(200,149,108,0.2)"/></svg>`;};
+  let starHTML="";
+  for(let i=1;i<=5;i++){if(rounded>=i)starHTML+=starSVG(1);else if(rounded>=i-0.5)starHTML+=starSVG(0.5);else starHTML+=starSVG(0);}
+  card.appendChild(h("div",{style:{fontSize:"0.93em",color:"#c8956c",marginBottom:"8px",display:"flex",alignItems:"center",gap:"8px"}},h("span",{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontWeight:700,fontSize:"1.1em"}},ratingVal.toFixed(1)),h("span",{innerHTML:starHTML})));
   /* Row 3: date · dripper */
   const metaParts=[fmtDate(rec.createdAt)];
   if(rec.dripper)metaParts.push(rec.dripper);
@@ -565,10 +583,20 @@ function renderCard(rec){
       /* Overall */
       const oDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
       oDiv.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"おいしさ"));
-      const stars=h("div",{style:{display:"flex",gap:4}});
-      const buildStars=(container)=>{container.innerHTML="";for(let i=1;i<=5;i++){container.appendChild(h("button",{className:"star",style:{fontSize:"1.6em",opacity:i<=er.overall?1:0.25,transform:i<=er.overall?"scale(1.1)":"scale(0.9)"},onClick:()=>{er.overall=i;buildStars(container);}},"★"));}};
-      buildStars(stars);
-      oDiv.appendChild(stars);eDiv.appendChild(oDiv);
+      const buildEditStars=(rating)=>{const r=Math.round(rating*2)/2;const d="M10 1 L12.6 7.3 L19.5 7.8 L14.2 12.3 L15.8 19 L10 15.3 L4.2 19 L5.8 12.3 L0.5 7.8 L7.4 7.3 Z";let html="";for(let i=1;i<=5;i++){if(r>=i)html+=`<svg width="22" height="22" viewBox="0 0 20 20"><path d="${d}" fill="#c8956c"/></svg>`;else if(r>=i-0.5)html+=`<svg width="22" height="22" viewBox="0 0 20 20"><defs><linearGradient id="ehs${i}"><stop offset="50%" stop-color="#c8956c"/><stop offset="50%" stop-color="rgba(200,149,108,0.2)"/></linearGradient></defs><path d="${d}" fill="url(#ehs${i})"/></svg>`;else html+=`<svg width="22" height="22" viewBox="0 0 20 20"><path d="${d}" fill="rgba(200,149,108,0.2)"/></svg>`;}return html;};
+      const eStars=h("div",{style:{display:"flex",gap:2,justifyContent:"center",marginBottom:4},innerHTML:buildEditStars(er.overall||0)});
+      oDiv.appendChild(eStars);
+      const oRow2=h("div",{style:{display:"flex",alignItems:"center",gap:10}});
+      const oVal2=h("span",{style:{fontSize:"1.3em",fontWeight:700,color:"#c8956c",minWidth:"44px",textAlign:"center",fontFamily:"'Cormorant Garamond',Georgia,serif"}},(er.overall||0).toFixed(1));
+      oRow2.appendChild(oVal2);
+      const oSliderWrap2=h("div",{style:{flex:1,position:"relative",padding:"8px 0"}});
+      oSliderWrap2.appendChild(h("div",{style:{position:"absolute",top:"50%",left:0,right:0,height:"4px",background:"rgba(200,149,108,0.15)",borderRadius:"2px",transform:"translateY(-50%)"}}));
+      const oFill2=h("div",{style:{position:"absolute",top:"50%",left:0,width:((er.overall||0)/5*100)+"%",height:"4px",background:"linear-gradient(90deg,#c8956c,#a07050)",borderRadius:"2px",transform:"translateY(-50%)"}});
+      oSliderWrap2.appendChild(oFill2);
+      const oSlider2=h("input",{type:"range",min:0,max:5,step:0.1,value:er.overall||0,style:{width:"100%",position:"relative",zIndex:2},onInput:e=>{const v=parseFloat(e.target.value);er.overall=v;oVal2.textContent=v.toFixed(1);oFill2.style.width=(v/5*100)+"%";eStars.innerHTML=buildEditStars(v);}});
+      oSliderWrap2.appendChild(oSlider2);
+      oRow2.appendChild(oSliderWrap2);
+      oDiv.appendChild(oRow2);eDiv.appendChild(oDiv);
       /* Taste */
       TASTE.forEach(t=>{
         const tRow=h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:4}});
