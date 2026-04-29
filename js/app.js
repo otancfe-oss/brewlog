@@ -634,11 +634,11 @@ function trendSVG(recs, tooltipIdx){
     if(!hasData)return;
     if(pts.length>1){
       const d=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-      svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="${isOverall?3:1.5}" stroke-linejoin="round" stroke-linecap="round" opacity="${isOverall?1:0.75}"/>`;
+      svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="${isOverall?2:1.5}" stroke-linejoin="round" stroke-linecap="round" opacity="${isOverall?1:0.75}"/>`;
     }
     pts.forEach((p,i)=>{
       const isActive=tooltipIdx===i;
-      const r=isOverall?(isActive?7:5):(isActive?4:3);
+      const r=isOverall?(isActive?6:5):(isActive?3.5:3);
       svg+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${color}" stroke="${isActive?"#ede4da":"#1a1410"}" stroke-width="${isActive?1.5:1}"/>`;
     });
   });
