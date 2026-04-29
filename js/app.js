@@ -751,18 +751,21 @@ function trendSVG(recs, tooltipIdx){
     svg+=`<text x="${xPos(i)}" y="${H-PB+12}" text-anchor="middle" style="font-size:8px;fill:#6b5a4e">${i+1}</text>`;
   });
 
-  /* 各指標の折れ線 */
-  TREND_LINES.forEach(({k,color})=>{
+  /* 各指標の折れ線（おいしさを最後に描いて最前面へ） */
+  const drawOrder=[...TREND_LINES.filter(t=>t.k!=="overall"), TREND_LINES.find(t=>t.k==="overall")];
+  drawOrder.forEach(({k,color})=>{
+    const isOverall=k==="overall";
     const pts=recs.map((r,i)=>({x:xPos(i),y:yPos(r[k]||0),v:r[k]||0}));
     const hasData=pts.some(p=>p.v>0);
     if(!hasData)return;
     if(pts.length>1){
       const d=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-      svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>`;
+      svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="${isOverall?3:1.5}" stroke-linejoin="round" stroke-linecap="round" opacity="${isOverall?1:0.75}"/>`;
     }
     pts.forEach((p,i)=>{
       const isActive=tooltipIdx===i;
-      svg+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isActive?5:3.5}" fill="${color}" stroke="${isActive?"#ede4da":"#1a1410"}" stroke-width="${isActive?1.5:1}"/>`;
+      const r=isOverall?(isActive?7:5):(isActive?4:3);
+      svg+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${color}" stroke="${isActive?"#ede4da":"#1a1410"}" stroke-width="${isActive?1.5:1}"/>`;
     });
   });
 
