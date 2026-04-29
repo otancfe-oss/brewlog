@@ -172,7 +172,7 @@ let state={
   showBeanList:false, showBeanDetail:false, showBeanName:false,
   viewingBean:null, editingBean:null, editingRecord:null,
   aiOpen:false, aiCopied:null, aiPaste:"", aiResult:null,
-  expandedCard:null
+  expandedCard:null, trendBeanId:null, trendTooltip:null
 };
 function initBrew(){const e=state.equip;const G=getGRINDERS();let gid=e.grinderId;if(!G[gid])gid="fellow_opus";const g=G[gid];return{beanId:"",grinderId:gid,dripper:e.dripper,grind:g.default,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,flavors:[],flavorNote:"",note:""};}
 state.brew=initBrew();
@@ -722,12 +722,165 @@ wrap.appendChild(box);
 return wrap;
 }
 
+/* ── Trend ── */
+const TREND_LINES=[
+  {k:"overall",  l:"おいしさ", color:"#c8956c"},
+  {k:"acidity",  l:"酸味",     color:"#7ab8d4"},
+  {k:"sweetness",l:"甘味",     color:"#c8a87a"},
+  {k:"bitterness",l:"苦味",    color:"#8a7b9e"},
+  {k:"body",     l:"濃度感",   color:"#7aad8a"}
+];
+
+function trendSVG(recs, tooltipIdx){
+  const W=320, H=180, PL=28, PR=12, PT=16, PB=28;
+  const iW=W-PL-PR, iH=H-PT-PB;
+  const n=recs.length;
+  const xPos=i=>PL+i*(iW/(n-1));
+  const yPos=v=>PT+iH-(v/5)*iH;
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
+
+  /* グリッド */
+  for(let v=0;v<=5;v++){
+    const y=yPos(v);
+    svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(200,149,108,0.1)" stroke-width="0.5"/>`;
+    if(v>0&&v<5)svg+=`<text x="${PL-4}" y="${y}" text-anchor="end" dominant-baseline="middle" style="font-size:8px;fill:#6b5a4e">${v}</text>`;
+  }
+  /* X軸ラベル */
+  recs.forEach((_,i)=>{
+    svg+=`<text x="${xPos(i)}" y="${H-PB+12}" text-anchor="middle" style="font-size:8px;fill:#6b5a4e">${i+1}</text>`;
+  });
+
+  /* 各指標の折れ線 */
+  TREND_LINES.forEach(({k,color})=>{
+    const pts=recs.map((r,i)=>({x:xPos(i),y:yPos(r[k]||0),v:r[k]||0}));
+    const hasData=pts.some(p=>p.v>0);
+    if(!hasData)return;
+    const d=pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
+    svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>`;
+    pts.forEach((p,i)=>{
+      const isActive=tooltipIdx===i;
+      svg+=`<circle cx="${p.x}" cy="${p.y}" r="${isActive?5:3}" fill="${color}" stroke="${isActive?"#ede4da":"#1a1410"}" stroke-width="${isActive?1.5:1}"/>`;
+    });
+  });
+
+  /* タップ領域（透明） */
+  recs.forEach((_,i)=>{
+    const x=xPos(i);
+    svg+=`<rect x="${x-12}" y="${PT}" width="24" height="${iH}" fill="transparent" data-idx="${i}" class="trend-hit"/>`;
+  });
+
+  svg+="</svg>";
+  return svg;
+}
+
+function renderTrendSection(){
+  /* 2杯以上記録がある豆を抽出 */
+  const beanCounts={};
+  state.records.forEach(r=>{if(r.beanId)beanCounts[r.beanId]=(beanCounts[r.beanId]||0)+1;});
+  const eligibleBeans=state.beans.filter(b=>beanCounts[b.id]>=2);
+
+  if(eligibleBeans.length===0)return h("div",{}); /* 対象なしなら何も出さない */
+
+  const wrap=h("div",{style:{marginBottom:"8px",display:"flex",flexDirection:"column",gap:10}});
+  wrap.appendChild(h("span",{style:{fontSize:"11px",color:"#6b5a4e",letterSpacing:"0.5px"}},"同じ豆の推移"));
+
+  /* 豆セレクター */
+  const chipRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:5}});
+  eligibleBeans.forEach(b=>{
+    const isOn=state.trendBeanId===b.id;
+    chipRow.appendChild(h("button",{
+      type:"button",
+      className:"chip"+(isOn?" on":""),
+      style:{fontSize:"0.8em"},
+      onClick:()=>{state.trendBeanId=isOn?null:b.id;state.trendTooltip=null;render();}
+    },`${beanFlag(b)} ${beanName(b)}`));
+  });
+  wrap.appendChild(chipRow);
+
+  if(!state.trendBeanId)return wrap;
+
+  /* 選択された豆の記録を古い順に並べる */
+  const beanRecs=[...state.records.filter(r=>r.beanId===state.trendBeanId)].reverse();
+  const bean=state.beans.find(b=>b.id===state.trendBeanId);
+  const GRINDERS=getGRINDERS();
+
+  /* グラフ */
+  const graphWrap=h("div",{style:{
+    background:"rgba(255,255,255,0.03)",border:"1px solid rgba(200,149,108,0.12)",
+    borderRadius:"12px",padding:"12px",display:"flex",flexDirection:"column",gap:8
+  }});
+
+  /* 凡例 */
+  const legend=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px 12px"}});
+  TREND_LINES.forEach(({l,color})=>{
+    legend.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:4}},
+      h("div",{style:{width:"12px",height:"2px",background:color,borderRadius:"1px"}}),
+      h("span",{style:{fontSize:"10px",color:"#8a7b6e"}},l)
+    ));
+  });
+  graphWrap.appendChild(legend);
+
+  /* SVGグラフ */
+  const svgWrap=h("div",{innerHTML:trendSVG(beanRecs,state.trendTooltip)});
+  svgWrap.querySelectorAll(".trend-hit").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const idx=parseInt(el.getAttribute("data-idx"));
+      state.trendTooltip=state.trendTooltip===idx?null:idx;
+      /* グラフとツールチップだけ更新（DOM直操作） */
+      const newSvg=h("div",{innerHTML:trendSVG(beanRecs,state.trendTooltip)});
+      newSvg.querySelectorAll(".trend-hit").forEach(el2=>{
+        el2.addEventListener("click",()=>{
+          const idx2=parseInt(el2.getAttribute("data-idx"));
+          state.trendTooltip=state.trendTooltip===idx2?null:idx2;
+          svgWrap.innerHTML=trendSVG(beanRecs,state.trendTooltip);
+          updateTooltip();
+        });
+      });
+      svgWrap.innerHTML=newSvg.innerHTML;
+      updateTooltip();
+    });
+  });
+  graphWrap.appendChild(svgWrap);
+
+  /* ツールチップ */
+  const tooltipEl=h("div",{id:"trend-tooltip"});
+  const updateTooltip=()=>{
+    tooltipEl.innerHTML="";
+    if(state.trendTooltip==null)return;
+    const rec=beanRecs[state.trendTooltip];
+    if(!rec)return;
+    const gr=GRINDERS[rec.grinderId];
+    const gn=gr?gr.name:rec.grinderId;
+    const parts=[];
+    if(rec.grind!=null)parts.push(`${gn} ${gr?.step<1?rec.grind.toFixed(gr.step===0.25?2:1):rec.grind}`);
+    if(rec.temp)parts.push(`${rec.temp}℃`);
+    const inner=h("div",{style:{
+      background:"rgba(30,24,18,0.95)",border:"1px solid rgba(200,149,108,0.25)",
+      borderRadius:"8px",padding:"8px 12px",display:"flex",flexDirection:"column",gap:4
+    }});
+    inner.appendChild(h("div",{style:{fontSize:"11px",color:"#8a7b6e"}},
+      `${state.trendTooltip+1}杯目 · ${fmtDate(rec.createdAt)}`));
+    if(parts.length)inner.appendChild(h("div",{style:{fontSize:"12px",color:"#ede4da"}},parts.join(" · ")));
+    /* スコア一覧 */
+    const scores=TREND_LINES.filter(t=>rec[t.k]>0).map(t=>`${t.l} ${rec[t.k]}`).join("  ");
+    if(scores)inner.appendChild(h("div",{style:{fontSize:"11px",color:"#c8956c"}},scores));
+    tooltipEl.appendChild(inner);
+  };
+  updateTooltip();
+  graphWrap.appendChild(tooltipEl);
+  wrap.appendChild(graphWrap);
+  return wrap;
+}
+
 function renderList(app){
 const list=h("div",{style:{animation:"fadeIn 0.3s ease"}});
 if(state.records.length===0){
 list.appendChild(h("div",{className:"empty"},h("div",{style:{fontSize:"40px",marginBottom:"16px"}},"☕"),h("p",{style:{fontSize:"14px",lineHeight:1.8}},"まだ記録がありません。"),h("p",{style:{fontSize:"14px",lineHeight:1.8}},"最初の一杯を記録してみましょう。")));
 }else{
-list.appendChild(h("div",{style:{fontSize:"12px",color:"#6b5a4e",marginBottom:"4px"}},`${state.records.length} 件の記録`));
+/* 振り返りセクション */
+list.appendChild(renderTrendSection());
+list.appendChild(h("div",{style:{fontSize:"12px",color:"#6b5a4e",marginBottom:"4px",marginTop:"16px"}},`${state.records.length} 件の記録`));
 state.records.forEach(rec=>{list.appendChild(renderCard(rec));});
 }
 /* Data management */
@@ -929,19 +1082,7 @@ return card;
 
 /* ── Init ── */
 render();
-/* PWA: serviceWorker登録（manifest.json, sw.js 準備後に有効化）
+/* 古いServiceWorkerのキャッシュをクリアするため登録を維持 */
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("./sw.js").then(reg=>{
-    reg.addEventListener("updatefound",()=>{
-      const sw=reg.installing;
-      if(!sw)return;
-      sw.addEventListener("statechange",()=>{
-        if(sw.state==="installed" && navigator.serviceWorker.controller){
-          console.log("[BrewLog] 新しいバージョンが利用可能です。次回起動時に反映されます。");
-        }
-      });
-    });
-  }).catch(()=>{});
+  navigator.serviceWorker.register("./sw.js").catch(()=>{});
 }
-*/
-
