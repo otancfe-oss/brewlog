@@ -58,3 +58,4 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
 .flavor-display{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .flavor-badge{background:rgba(200,149,108,0.15);border:1px solid rgba(200,149,108,0.25);border-radius:20px;padding:3px 9px;font-size:0.75em;color:#c8956c}
 
+
