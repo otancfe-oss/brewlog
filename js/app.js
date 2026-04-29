@@ -172,7 +172,7 @@ let state={
   showBeanList:false, showBeanDetail:false, showBeanName:false,
   viewingBean:null, editingBean:null, editingRecord:null,
   aiOpen:false, aiCopied:null, aiPaste:"", aiResult:null,
-  expandedCard:null, trendBeanId:null, trendTooltip:null
+  expandedCard:null, trendBeanId:null, trendTooltip:null, trendOpen:false
 };
 function initBrew(){const e=state.equip;const G=getGRINDERS();let gid=e.grinderId;if(!G[gid])gid="fellow_opus";const g=G[gid];return{beanId:"",grinderId:gid,dripper:e.dripper,grind:g.default,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,flavors:[],flavorNote:"",note:""};}
 state.brew=initBrew();
@@ -724,21 +724,21 @@ return wrap;
 
 /* ── Trend ── */
 const TREND_LINES=[
-  {k:"overall",  l:"おいしさ", color:"#c8956c"},
-  {k:"acidity",  l:"酸味",     color:"#7ab8d4"},
-  {k:"sweetness",l:"甘味",     color:"#c8a87a"},
-  {k:"bitterness",l:"苦味",    color:"#8a7b9e"},
-  {k:"body",     l:"濃度感",   color:"#7aad8a"}
+  {k:"overall",   l:"おいしさ", color:"#c8956c"},
+  {k:"acidity",   l:"酸味",     color:"#e8d44d"},
+  {k:"sweetness", l:"甘味",     color:"#e8a0b4"},
+  {k:"bitterness",l:"苦味",     color:"#8ec4a0"},
+  {k:"body",      l:"濃度感",   color:"#7a5c3c"}
 ];
 
 function trendSVG(recs, tooltipIdx){
   const W=320, H=180, PL=28, PR=12, PT=16, PB=28;
   const iW=W-PL-PR, iH=H-PT-PB;
   const n=recs.length;
-  const xPos=i=>PL+i*(iW/(n-1));
+  const xPos=i=>n===1?PL+iW/2:PL+i*(iW/(n-1));
   const yPos=v=>PT+iH-(v/5)*iH;
 
-  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible">`;
 
   /* グリッド */
   for(let v=0;v<=5;v++){
@@ -756,18 +756,14 @@ function trendSVG(recs, tooltipIdx){
     const pts=recs.map((r,i)=>({x:xPos(i),y:yPos(r[k]||0),v:r[k]||0}));
     const hasData=pts.some(p=>p.v>0);
     if(!hasData)return;
-    const d=pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
-    svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>`;
+    if(pts.length>1){
+      const d=pts.map((p,i)=>`${i===0?"M":"L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+      svg+=`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>`;
+    }
     pts.forEach((p,i)=>{
       const isActive=tooltipIdx===i;
-      svg+=`<circle cx="${p.x}" cy="${p.y}" r="${isActive?5:3}" fill="${color}" stroke="${isActive?"#ede4da":"#1a1410"}" stroke-width="${isActive?1.5:1}"/>`;
+      svg+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isActive?5:3.5}" fill="${color}" stroke="${isActive?"#ede4da":"#1a1410"}" stroke-width="${isActive?1.5:1}"/>`;
     });
-  });
-
-  /* タップ領域（透明） */
-  recs.forEach((_,i)=>{
-    const x=xPos(i);
-    svg+=`<rect x="${x-12}" y="${PT}" width="24" height="${iH}" fill="transparent" data-idx="${i}" class="trend-hit"/>`;
   });
 
   svg+="</svg>";
@@ -779,19 +775,26 @@ function renderTrendSection(){
   const beanCounts={};
   state.records.forEach(r=>{if(r.beanId)beanCounts[r.beanId]=(beanCounts[r.beanId]||0)+1;});
   const eligibleBeans=state.beans.filter(b=>beanCounts[b.id]>=2);
+  if(eligibleBeans.length===0)return h("div",{});
 
-  if(eligibleBeans.length===0)return h("div",{}); /* 対象なしなら何も出さない */
+  const isOpen=state.trendOpen;
+  const wrap=h("div",{style:{marginBottom:"8px",display:"flex",flexDirection:"column",gap:0}});
 
-  const wrap=h("div",{style:{marginBottom:"8px",display:"flex",flexDirection:"column",gap:10}});
-  wrap.appendChild(h("span",{style:{fontSize:"11px",color:"#6b5a4e",letterSpacing:"0.5px"}},"同じ豆の推移"));
+  /* 折りたたみヘッダー */
+  wrap.appendChild(h("button",{
+    type:"button",className:"btn-toggle",
+    style:{marginBottom: isOpen?"8px":"0"},
+    onClick:()=>{state.trendOpen=!state.trendOpen;state.trendBeanId=null;state.trendTooltip=null;render();}
+  }, isOpen?"▾ 同じ豆の抽出結果の推移":"▸ 同じ豆の抽出結果の推移"));
+
+  if(!isOpen)return wrap;
 
   /* 豆セレクター */
-  const chipRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:5}});
+  const chipRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:5,marginBottom:"8px"}});
   eligibleBeans.forEach(b=>{
     const isOn=state.trendBeanId===b.id;
     chipRow.appendChild(h("button",{
-      type:"button",
-      className:"chip"+(isOn?" on":""),
+      type:"button",className:"chip"+(isOn?" on":""),
       style:{fontSize:"0.8em"},
       onClick:()=>{state.trendBeanId=isOn?null:b.id;state.trendTooltip=null;render();}
     },`${beanFlag(b)} ${beanName(b)}`));
@@ -800,12 +803,10 @@ function renderTrendSection(){
 
   if(!state.trendBeanId)return wrap;
 
-  /* 選択された豆の記録を古い順に並べる */
+  /* 選択豆の記録（古い順） */
   const beanRecs=[...state.records.filter(r=>r.beanId===state.trendBeanId)].reverse();
-  const bean=state.beans.find(b=>b.id===state.trendBeanId);
   const GRINDERS=getGRINDERS();
 
-  /* グラフ */
   const graphWrap=h("div",{style:{
     background:"rgba(255,255,255,0.03)",border:"1px solid rgba(200,149,108,0.12)",
     borderRadius:"12px",padding:"12px",display:"flex",flexDirection:"column",gap:8
@@ -815,36 +816,48 @@ function renderTrendSection(){
   const legend=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px 12px"}});
   TREND_LINES.forEach(({l,color})=>{
     legend.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:4}},
-      h("div",{style:{width:"12px",height:"2px",background:color,borderRadius:"1px"}}),
+      h("div",{style:{width:"14px",height:"2px",background:color,borderRadius:"1px",flexShrink:0}}),
       h("span",{style:{fontSize:"10px",color:"#8a7b6e"}},l)
     ));
   });
   graphWrap.appendChild(legend);
 
+  /* グラフ＋タップ領域を重ねるコンテナ */
+  const graphContainer=h("div",{style:{position:"relative",width:"100%"}});
+
   /* SVGグラフ */
-  const svgWrap=h("div",{innerHTML:trendSVG(beanRecs,state.trendTooltip)});
-  svgWrap.querySelectorAll(".trend-hit").forEach(el=>{
-    el.addEventListener("click",()=>{
-      const idx=parseInt(el.getAttribute("data-idx"));
-      state.trendTooltip=state.trendTooltip===idx?null:idx;
-      /* グラフとツールチップだけ更新（DOM直操作） */
-      const newSvg=h("div",{innerHTML:trendSVG(beanRecs,state.trendTooltip)});
-      newSvg.querySelectorAll(".trend-hit").forEach(el2=>{
-        el2.addEventListener("click",()=>{
-          const idx2=parseInt(el2.getAttribute("data-idx"));
-          state.trendTooltip=state.trendTooltip===idx2?null:idx2;
-          svgWrap.innerHTML=trendSVG(beanRecs,state.trendTooltip);
-          updateTooltip();
-        });
-      });
-      svgWrap.innerHTML=newSvg.innerHTML;
+  const svgEl=h("div",{innerHTML:trendSVG(beanRecs,state.trendTooltip),style:{pointerEvents:"none"}});
+  graphContainer.appendChild(svgEl);
+
+  /* タップ領域をSVGの外にdivで作る（iOS対応） */
+  const hitLayer=h("div",{style:{
+    position:"absolute",top:0,left:0,right:0,bottom:0,
+    display:"flex",alignItems:"stretch"
+  }});
+  /* 左右のパディング分だけ空白を確保して均等分割 */
+  const PAD_L_PCT=(28/320*100).toFixed(2)+"%";
+  const PAD_R_PCT=(12/320*100).toFixed(2)+"%";
+  hitLayer.appendChild(h("div",{style:{width:PAD_L_PCT,flexShrink:0}}));
+  const hitInner=h("div",{style:{flex:1,display:"flex"}});
+  beanRecs.forEach((_,i)=>{
+    const hitEl=h("div",{
+      type:"button",
+      style:{flex:1,cursor:"pointer",WebkitTapHighlightColor:"transparent"}
+    });
+    hitEl.addEventListener("click",()=>{
+      state.trendTooltip=state.trendTooltip===i?null:i;
+      svgEl.innerHTML=trendSVG(beanRecs,state.trendTooltip);
       updateTooltip();
     });
+    hitInner.appendChild(hitEl);
   });
-  graphWrap.appendChild(svgWrap);
+  hitLayer.appendChild(hitInner);
+  hitLayer.appendChild(h("div",{style:{width:PAD_R_PCT,flexShrink:0}}));
+  graphContainer.appendChild(hitLayer);
+  graphWrap.appendChild(graphContainer);
 
   /* ツールチップ */
-  const tooltipEl=h("div",{id:"trend-tooltip"});
+  const tooltipEl=h("div",{});
   const updateTooltip=()=>{
     tooltipEl.innerHTML="";
     if(state.trendTooltip==null)return;
@@ -852,19 +865,27 @@ function renderTrendSection(){
     if(!rec)return;
     const gr=GRINDERS[rec.grinderId];
     const gn=gr?gr.name:rec.grinderId;
-    const parts=[];
-    if(rec.grind!=null)parts.push(`${gn} ${gr?.step<1?rec.grind.toFixed(gr.step===0.25?2:1):rec.grind}`);
-    if(rec.temp)parts.push(`${rec.temp}℃`);
     const inner=h("div",{style:{
       background:"rgba(30,24,18,0.95)",border:"1px solid rgba(200,149,108,0.25)",
-      borderRadius:"8px",padding:"8px 12px",display:"flex",flexDirection:"column",gap:4
+      borderRadius:"8px",padding:"8px 12px",display:"flex",flexDirection:"column",gap:4,
+      animation:"fadeIn 0.15s ease"
     }});
     inner.appendChild(h("div",{style:{fontSize:"11px",color:"#8a7b6e"}},
       `${state.trendTooltip+1}杯目 · ${fmtDate(rec.createdAt)}`));
-    if(parts.length)inner.appendChild(h("div",{style:{fontSize:"12px",color:"#ede4da"}},parts.join(" · ")));
-    /* スコア一覧 */
-    const scores=TREND_LINES.filter(t=>rec[t.k]>0).map(t=>`${t.l} ${rec[t.k]}`).join("  ");
-    if(scores)inner.appendChild(h("div",{style:{fontSize:"11px",color:"#c8956c"}},scores));
+    /* 挽き目・湯温 */
+    const params=[];
+    if(rec.grind!=null&&gr)params.push(`${gn} ${gr.step<1?rec.grind.toFixed(gr.step===0.25?2:1):rec.grind}`);
+    if(rec.temp)params.push(`${rec.temp}℃`);
+    if(params.length)inner.appendChild(h("div",{style:{fontSize:"12px",color:"#ede4da"}},params.join(" · ")));
+    /* スコア */
+    const scores=TREND_LINES.filter(t=>(rec[t.k]||0)>0);
+    if(scores.length){
+      const scoreRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px 10px",marginTop:"2px"}});
+      scores.forEach(t=>{
+        scoreRow.appendChild(h("span",{style:{fontSize:"11px",color:t.color}},`${t.l} ${rec[t.k]}`));
+      });
+      inner.appendChild(scoreRow);
+    }
     tooltipEl.appendChild(inner);
   };
   updateTooltip();
