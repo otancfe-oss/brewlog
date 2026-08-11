@@ -7,6 +7,7 @@ const DRIPPERS=["Hario V60","Origami","OREA","Kalita Wave","Chemex","AeroPress",
 const TEMPS=[80,82,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,100];
 const DOSES=[10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30];
 const WATERS=[150,180,200,220,225,230,240,250,260,270,280,300,350,400,450,500];
+const ICE_WEIGHTS=[50,60,70,80,90,100,110,120,130,140,150,160,180,200,220,250];
 const PROCS=["Washed","Natural","Honey","Anaerobic","Carbonic Maceration","Wet Hulled","Other"];
 const TASTE=[{k:"acidity",l:"酸味",e:"🍋"},{k:"sweetness",l:"甘味",e:"🍯"},{k:"bitterness",l:"苦味",e:"🫘"},{k:"body",l:"濃度感",e:"☕"}];
 const RADAR=[{k:"overall",l:"おいしさ"},...TASTE.map(t=>({k:t.k,l:t.l}))];
@@ -48,7 +49,7 @@ let state={
   aiOpen:false, aiCopied:null, aiPaste:"", aiResult:null,
   expandedCard:null, trendBeanId:null, trendTooltip:null, trendOpen:false
 };
-function initBrew(){const e=state.equip;const G=getGRINDERS();let gid=e.grinderId;if(!G[gid])gid="fellow_opus";const g=G[gid];return{beanId:"",grinderId:gid,dripper:e.dripper,grind:g.default,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,flavors:[],flavorNote:"",note:""};}
+function initBrew(){const e=state.equip;const G=getGRINDERS();let gid=e.grinderId;if(!G[gid])gid="fellow_opus";const g=G[gid];return{beanId:"",brewType:"hot",iceWeight:0,grinderId:gid,dripper:e.dripper,grind:g.default,temp:93,dose:15,water:250,brewTimeMin:3,brewTimeSec:0,pours:[],overall:3,acidity:0,sweetness:0,bitterness:0,body:0,flavors:[],flavorNote:"",note:""};}
 state.brew=initBrew();
 function save(){
   db.saveRecords(state.records);
@@ -167,6 +168,13 @@ const form=h("div",{className:"form"});
 /* Bean selector */
 form.appendChild(renderBeanSelector());
 
+/* Brew type (hot / ice) */
+const btTabs=h("div",{className:"tabs",style:{marginBottom:0}},
+  h("button",{type:"button",className:"tab"+(b.brewType!=="ice"?" active":""),onClick:()=>{b.brewType="hot";render();}},"Hot"),
+  h("button",{type:"button",className:"tab"+(b.brewType==="ice"?" active":""),onClick:()=>{b.brewType="ice";if(!b.iceWeight)b.iceWeight=100;render();}},"Ice")
+);
+form.appendChild(btTabs);
+
 /* Grinder */
 const gDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
 gDiv.appendChild(h("span",{className:"lbl"},"ミル"));
@@ -268,8 +276,18 @@ grid.appendChild(d);
 });
 form.appendChild(grid);
 
+/* Ice weight (アイスのみ) */
+if(b.brewType==="ice"){
+const iwDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
+iwDiv.appendChild(h("span",{className:"lbl"},"氷量"));
+iwDiv.appendChild(sel(ICE_WEIGHTS.map(o=>o+"g"),b.iceWeight+"g",v=>{b.iceWeight=parseInt(v);render();}));
+form.appendChild(iwDiv);
+}
+
 /* Ratio */
-if(b.dose>0&&b.water>0){form.appendChild(h("div",{className:"ratio-box"},h("span",{style:{fontSize:"12px",color:"#8a7b6e"}},"Ratio"),h("span",{className:"ratio-val"},`1 : ${(b.water/b.dose).toFixed(1)}`)));}
+const isIce=b.brewType==="ice";
+const totalWater=b.water+(isIce?(b.iceWeight||0):0);
+if(b.dose>0&&totalWater>0){form.appendChild(h("div",{className:"ratio-box"},h("span",{style:{fontSize:"12px",color:"#8a7b6e"}},isIce?"Ratio（氷込み）":"Ratio"),h("span",{className:"ratio-val"},`1 : ${(totalWater/b.dose).toFixed(1)}`)));}
 
 /* Brew time */
 const btDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:4}});
@@ -817,8 +835,10 @@ let starHTML="";
 for(let i=1;i<=5;i++){if(rounded>=i)starHTML+=starSVG(1);else if(rounded>=i-0.5)starHTML+=starSVG(0.5);else starHTML+=starSVG(0);}
 card.appendChild(h("div",{style:{fontSize:"0.93em",color:"#c8956c",marginBottom:"8px",display:"flex",alignItems:"center",gap:"8px"}},h("span",{style:{fontFamily:"'Cormorant Garamond',Georgia,serif",fontWeight:700,fontSize:"1.1em"}},ratingVal.toFixed(1)),h("span",{innerHTML:starHTML})));
 /* Row 3: date · dripper */
+const recIsIce=rec.brewType==="ice";
 const metaParts=[fmtDate(rec.createdAt)];
 if(rec.dripper)metaParts.push(rec.dripper);
+if(recIsIce)metaParts.push("Ice");
 card.appendChild(h("div",{style:{fontSize:"0.8em",color:"#8a7b6e",marginBottom:"4px"}},metaParts.join(" · ")));
 /* Row 4: grinder · temp · ratio */
 const paramParts=[];
@@ -827,8 +847,9 @@ if(rec.temp)paramParts.push(rec.temp+"℃");
 const paramRow=h("div",{style:{fontSize:"0.8em",color:"#b8a590",display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center"}});
 if(paramParts.length)paramRow.appendChild(h("span",null,paramParts.join(" · ")));
 if(rec.dose&&rec.water){
+const recTotalWater=rec.water+(recIsIce?(rec.iceWeight||0):0);
 if(paramParts.length)paramRow.appendChild(h("span",{style:{color:"#6b5a4e"}},"·"));
-paramRow.appendChild(h("span",{style:{color:"#c8956c",fontWeight:600}},`1:${(rec.water/rec.dose).toFixed(1)}`));
+paramRow.appendChild(h("span",{style:{color:"#c8956c",fontWeight:600}},`1:${(recTotalWater/rec.dose).toFixed(1)}`));
 }
 card.appendChild(paramRow);
 
@@ -845,6 +866,19 @@ if(state.editingRecord&&state.editingRecord.id===rec.id){
 const er=state.editingRecord;
 const eDiv=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid rgba(200,149,108,0.1)"},onClick:e=>e.stopPropagation()});
 eDiv.appendChild(h("div",{style:{fontSize:"0.8em",color:"#c8956c",fontWeight:600,marginBottom:"10px"}},"記録を編集"));
+/* Brew type (hot / ice) */
+const btDiv2=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+btDiv2.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"抽出方式"));
+const btChips=h("div",{style:{display:"flex",flexWrap:"wrap",gap:4}});
+btChips.appendChild(h("button",{className:"chip"+(er.brewType!=="ice"?" on":""),onClick:()=>{er.brewType="hot";render();}},"Hot"));
+btChips.appendChild(h("button",{className:"chip"+(er.brewType==="ice"?" on":""),onClick:()=>{er.brewType="ice";if(!er.iceWeight)er.iceWeight=100;render();}},"Ice"));
+btDiv2.appendChild(btChips);eDiv.appendChild(btDiv2);
+if(er.brewType==="ice"){
+const iwDiv2=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
+iwDiv2.appendChild(h("span",{style:{fontSize:"0.73em",color:"#6b5a4e"}},"氷量"));
+iwDiv2.appendChild(sel(ICE_WEIGHTS.map(o=>o+"g"),er.iceWeight+"g",v=>{er.iceWeight=parseInt(v);render();}));
+eDiv.appendChild(iwDiv2);
+}
 const erg=GRINDERS[er.grinderId]||GRINDERS["fellow_opus"];
 /* Grinder select */
 const grDiv=h("div",{style:{display:"flex",flexDirection:"column",gap:3,marginBottom:8}});
@@ -935,7 +969,11 @@ const det=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px soli
 const info=h("div",{style:{fontSize:"12px",color:"#8a7b6e",marginBottom:"8px",display:"flex",flexDirection:"column",gap:"4px"}});
 if(rec.dose)info.appendChild(h("div",null,"粉量: "+rec.dose+"g"));
 if(rec.water)info.appendChild(h("div",null,"湯量: "+rec.water+"g"));
-if(rec.dose&&rec.water)info.appendChild(h("div",null,"比率: ",h("span",{style:{color:"#c8956c",fontWeight:600}},"1:"+(rec.water/rec.dose).toFixed(1))));
+if(rec.brewType==="ice"&&rec.iceWeight)info.appendChild(h("div",null,"氷量: "+rec.iceWeight+"g"));
+if(rec.dose&&rec.water){
+const detTotalWater=rec.water+(rec.brewType==="ice"?(rec.iceWeight||0):0);
+info.appendChild(h("div",null,rec.brewType==="ice"?"比率（氷込み）: ":"比率: ",h("span",{style:{color:"#c8956c",fontWeight:600}},"1:"+(detTotalWater/rec.dose).toFixed(1))));
+}
 if(rec.brewTimeMin>0||rec.brewTimeSec>0)info.appendChild(h("div",null,"抽出時間: "+rec.brewTimeMin+":"+String(rec.brewTimeSec||0).padStart(2,"0")));
 if(bean?.country)info.appendChild(h("div",null,"国: "+bean.country));
 if(bean?.farm)info.appendChild(h("div",null,"農園: "+bean.farm));
@@ -969,7 +1007,7 @@ if(rec.flavors&&rec.flavors.length>0){
 if(rec.note)det.appendChild(h("p",{style:{fontSize:"13px",color:"#9a8b7e",margin:0,lineHeight:1.5}},rec.note));
 /* Edit & Delete buttons */
 const actBtns=h("div",{style:{display:"flex",gap:8,marginTop:"10px"}});
-actBtns.appendChild(h("button",{style:{flex:1,background:"rgba(200,149,108,0.15)",border:"1px solid rgba(200,149,108,0.25)",borderRadius:8,padding:"8px",color:"#ede4da",fontSize:"0.8em",cursor:"pointer",fontFamily:"inherit"},onClick:e=>{e.stopPropagation();state.editingRecord={...rec,pours:rec.pours?rec.pours.map(p=>({...p})):[], flavors:rec.flavors?[...rec.flavors]:[], flavorNote:rec.flavorNote||""};render();}},"✏️ 編集"));
+actBtns.appendChild(h("button",{style:{flex:1,background:"rgba(200,149,108,0.15)",border:"1px solid rgba(200,149,108,0.25)",borderRadius:8,padding:"8px",color:"#ede4da",fontSize:"0.8em",cursor:"pointer",fontFamily:"inherit"},onClick:e=>{e.stopPropagation();state.editingRecord={...rec,pours:rec.pours?rec.pours.map(p=>({...p})):[], flavors:rec.flavors?[...rec.flavors]:[], flavorNote:rec.flavorNote||"", brewType:rec.brewType||"hot", iceWeight:rec.iceWeight||0};render();}},"✏️ 編集"));
 actBtns.appendChild(h("button",{style:{flex:1,background:"none",border:"1px solid rgba(200,100,100,0.3)",borderRadius:8,padding:"8px",color:"#c87070",fontSize:"0.8em",cursor:"pointer",fontFamily:"inherit"},onClick:e=>{e.stopPropagation();if(!confirm("この記録を削除しますか？"))return;state.records=state.records.filter(r=>r.id!==rec.id);save();render();}},"🗑 削除"));
 det.appendChild(actBtns);
 card.appendChild(det);
